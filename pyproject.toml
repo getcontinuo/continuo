@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "continuo-memory"
-version = "0.0.4"
+version = "0.0.5"
 description = "Cross-agent memory federation for human-AI collaboration"
 readme = "README.md"
 license = { text = "MIT" }
@@ -53,6 +53,11 @@ dev = [
 # L2 episodic memory via UltraRAG / any MCP retriever.
 # Optional because L0+L1 work standalone; L2 only activates when enabled.
 ultrarag = [
+    "fastmcp>=2.0",
+]
+# L6 federation MCP server. Required to run `python -m core.l6_server`
+# and expose the agent-library via the Model Context Protocol.
+server = [
     "fastmcp>=2.0",
 ]
 

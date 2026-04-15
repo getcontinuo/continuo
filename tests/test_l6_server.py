@@ -1,0 +1,88 @@
+"""Tests for core.l6_server -- fastmcp wrapper around L6Store."""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+import pytest
+import yaml
+
+from core import l6_server as server_module
+from core.l6_store import L6Store
+
+
+# -- Lazy-import behavior ------------------------------------------------------
+
+
+def test_create_l6_server_raises_clear_error_when_fastmcp_missing(tmp_path, monkeypatch):
+    """Instantiating the server without fastmcp must raise a helpful ImportError."""
+    # Pretend fastmcp is not installed
+    monkeypatch.setitem(sys.modules, "fastmcp", None)
+    store = L6Store(tmp_path / "empty-lib")
+    with pytest.raises(ImportError) as excinfo:
+        server_module.create_l6_server(store)
+    msg = str(excinfo.value).lower()
+    assert "fastmcp" in msg
+    assert "server" in msg  # should mention the pip extra
+
+
+def test_importing_module_does_not_require_fastmcp(monkeypatch):
+    """Just importing core.l6_server shouldn't try to import fastmcp."""
+    # Remove any cached fastmcp import
+    monkeypatch.setitem(sys.modules, "fastmcp", None)
+    # Re-import the module -- should succeed even though fastmcp is None
+    import importlib
+
+    importlib.reload(server_module)
+    # No exception raised means the test passes
+
+
+# -- Server construction when fastmcp IS available ----------------------------
+
+
+@pytest.fixture
+def library(tmp_path):
+    lib = tmp_path / "agent-library"
+    agents_dir = lib / "agents"
+    agents_dir.mkdir(parents=True)
+
+    def write(agent_id: str, manifest: dict) -> Path:
+        path = agents_dir / f"{agent_id}.l5.yaml"
+        path.write_text(yaml.safe_dump(manifest), encoding="utf-8")
+        return path
+
+    return {"path": lib, "write": write}
+
+
+def _require_fastmcp_or_skip():
+    """Skip the test if fastmcp isn't installed in the test env."""
+    try:
+        import fastmcp  # noqa: F401
+    except ImportError:
+        pytest.skip("fastmcp not installed; skipping server-construction tests")
+
+
+def test_create_l6_server_returns_fastmcp_instance(library):
+    _require_fastmcp_or_skip()
+    library["write"](
+        "claude-code",
+        {
+            "spec_version": "0.1",
+            "agent": {"id": "claude-code", "type": "code-assistant"},
+            "last_updated": "2026-04-15T12:00:00+00:00",
+            "known_entities": [{"name": "ILTT", "type": "project"}],
+        },
+    )
+    store = L6Store(library["path"])
+    server = server_module.create_l6_server(store)
+    assert server is not None
+    # FastMCP instances have a `name` attribute
+    assert getattr(server, "name", None) == "continuo-l6"
+
+
+def test_server_name_override(library):
+    _require_fastmcp_or_skip()
+    store = L6Store(library["path"])
+    server = server_module.create_l6_server(store, name="my-custom-server")
+    assert getattr(server, "name", None) == "my-custom-server"
