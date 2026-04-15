@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "continuo-memory"
-version = "0.0.5"
+version = "0.0.6"
 description = "Cross-agent memory federation for human-AI collaboration"
 readme = "README.md"
 license = { text = "MIT" }
@@ -65,9 +65,9 @@ server = [
 # Third-party adapters register here via their own pyproject.toml.
 [project.entry-points."continuo.adapters"]
 claude-code = "adapters.claude_code:ClaudeCodeAdapter"
-# codex = "adapters.codex:CodexAdapter"     # planned v0.2.0
-# clyde = "adapters.clyde:ClydeAdapter"     # planned v0.2.0 (native publisher)
-# clair = "adapters.clair:ClairAdapter"     # planned v0.2.0 (native publisher)
+codex = "adapters.codex:CodexAdapter"
+# clyde = "adapters.clyde:ClydeAdapter"     # native publisher lives in ~/.clyde/, not here
+# clair = "adapters.clair:ClairAdapter"     # same pattern -- native publisher
 
 [project.scripts]
 # continuo = "continuo.cli:main"
