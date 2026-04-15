@@ -1,0 +1,110 @@
+# ============================================================
+# CLYDE MEMORY — L0 HOT CACHE
+# Always injected into system prompt. Keep under 3K tokens.
+# Edit freely. Version control in claude-brain.
+# Last updated: 2026-04-14
+# ============================================================
+
+meta:
+  version: "1.0"
+  last_updated: "2026-04-14"
+  owner: "Ryan Davis / RADLAB LLC"
+  token_budget: 3000
+
+identity:
+  user: "Ryan Davis"
+  alias: "RADMAN"
+  company: "RADLAB LLC"
+  role: "Founder & CEO"
+  location: "Seattle, WA"
+
+projects:
+  - name: "ILTT"
+    full_name: "If Lift. Then That."
+    status: "submitted_app_stores"
+    type: "AI fitness business platform"
+    platforms: ["iOS", "Android", "Web"]
+    priority: 1
+
+  - name: "Clyde"
+    full_name: "Clyde AI Swarm"
+    status: "active_development"
+    type: "Local AI swarm"
+    stack: ["OpenAI Agents SDK", "Ollama", "UltraRAG 3.0"]
+    priority: 1
+
+  - name: "Continuo"
+    full_name: "Continuo Memory Architecture"
+    status: "speccing"
+    type: "Tiered human-inspired memory layer"
+    priority: 1
+
+  - name: "Coolculator"
+    status: "naming_phase"
+    type: "Calculator app"
+    priority: 2
+
+  - name: "Shipstable"
+    status: "prototyping"
+    type: "Unified code agent mobile app"
+    priority: 2
+
+  - name: "PRUN"
+    status: "built"
+    type: "Password manager"
+    priority: 3
+
+  - name: "OMNIVour"
+    status: "active"
+    type: "AI media processor"
+    stack: ["Flutter", "CrewAI"]
+    priority: 3
+
+  - name: "Castmore"
+    status: "built"
+    type: "TMDB streaming discovery"
+    platforms: ["iOS", "Android"]
+    priority: 3
+
+hardware:
+  local_model: "Gemma 3 27B quantized"
+  inference: "Ollama"
+  gpu_evaluating: "NVIDIA A100 PCIe 80GB"
+  context_window: "128K"
+
+entities:
+  - keyword: "RADLAB"
+    type: "company"
+  - keyword: "ILTT"
+    type: "project"
+  - keyword: "Clyde"
+    type: "project"
+  - keyword: "Continuo"
+    type: "concept"
+  - keyword: "Coolculator"
+    type: "project"
+  - keyword: "Shipstable"
+    type: "project"
+  - keyword: "UltraRAG"
+    type: "tool"
+  - keyword: "A100"
+    type: "hardware"
+  - keyword: "Ollama"
+    type: "tool"
+  - keyword: "claude-brain"
+    type: "system"
+  - keyword: "OpenAI Agents SDK"
+    type: "tool"
+  - keyword: "PRUN"
+    type: "project"
+  - keyword: "OMNIVour"
+    type: "project"
+  - keyword: "Castmore"
+    type: "project"
+
+current_focus:
+  primary: "Building Continuo — tiered memory architecture for Clyde"
+  secondary: "ILTT app store approval"
+  hardware: "A100 PCIe 80GB evaluation"
+  last_session: "2026-04-14"
+  last_topic: "Designed Continuo L0-L4 memory spec, confirmed UltraRAG async compatibility"

@@ -1,0 +1,87 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "continuo-memory"
+version = "0.0.1"
+description = "Cross-agent memory federation for human-AI collaboration"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [
+    { name = "Ryan Davis", email = "ryandavispro1@gmail.com" },
+]
+maintainers = [
+    { name = "RADLAB LLC" },
+]
+keywords = [
+    "ai",
+    "memory",
+    "agent",
+    "federation",
+    "mcp",
+    "rag",
+    "cognition",
+    "llm",
+]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.4",
+    "mypy>=1.10",
+]
+
+# Entry points for adapter plugins.
+# Third-party adapters register here via their own pyproject.toml.
+[project.entry-points."continuo.adapters"]
+# claude-code = "continuo.adapters.claude_code:ClaudeCodeAdapter"
+# codex = "continuo.adapters.codex:CodexAdapter"
+# clyde = "continuo.adapters.clyde:ClydeAdapter"
+# clair = "continuo.adapters.clair:ClairAdapter"
+
+[project.scripts]
+# continuo = "continuo.cli:main"
+
+[project.urls]
+Homepage = "https://continuo.cloud"
+Repository = "https://github.com/getcontinuo/continuo"
+Issues = "https://github.com/getcontinuo/continuo/issues"
+Documentation = "https://continuo.cloud/docs"
+
+[tool.setuptools]
+package-dir = { "" = "." }
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["core*", "adapters*", "cli*"]
+exclude = ["tests*", "docs*", "spec*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "SIM"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

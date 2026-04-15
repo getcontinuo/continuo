@@ -1,0 +1,79 @@
+# Contributing to Continuo
+
+Continuo is free (MIT) and in pre-alpha. Contributions welcome — especially adapters for agents and frameworks not yet covered.
+
+## Current Status
+
+v0.0.1 scaffold. Phase 1 reference orchestrator (L0 + L1) is working standalone. Federation layer (L5 + L6) and adapter plugin system are under active design.
+
+**If you want to build on this today, expect sharp edges.** The spec is likely to change between v0.0.x and v0.1.x as we learn from the reference implementation.
+
+## Where to Start
+
+- **Read the thesis.** [`spec/THESIS.md`](spec/THESIS.md) explains *why* the architecture looks the way it does. If you disagree with the thesis, your contribution may end up pulling in the wrong direction.
+- **Read the architecture.** [`spec/ARCHITECTURE_v0.1.md`](spec/ARCHITECTURE_v0.1.md) is the full layer-by-layer description.
+- **See use cases.** [`spec/USE_CASES.md`](spec/USE_CASES.md) shows the intended breadth — dev tools are the proving ground, but the architecture targets universal knowledge work.
+
+## Types of Contributions
+
+### Adapters (most wanted)
+Continuo's value scales linearly with the number of agents/tools it can federate. An adapter reads a native agent's memory store and emits a normalized L5 manifest. See [`adapters/`](adapters/) for examples (once implemented) and the adapter contract spec in `spec/ADAPTER_CONTRACT.md` (coming in v0.1.0).
+
+Specifically wanted:
+- Cursor adapter (SQLite schema reverse-engineering)
+- Copilot adapter (accepting the encrypted-reasoning limitation)
+- LangChain / CrewAI / AutoGen memory exporters
+- Non-agent data sources: Linear, Attio, Notion, Google Calendar, Slack, email (IMAP/MBOX), Obsidian
+
+### Core improvements
+- L0 keyword detection is currently naive string matching. Fuzzy matching + alias tables would be a straight win.
+- L1 token budget enforcement currently drops entities in iteration order. LRU or relevance-weighted eviction would be better.
+- Async timing model testing — we need property tests that verify L2 never blocks first-response generation.
+
+### Documentation
+- Worked tutorials per domain (one of the USE_CASES scenarios as an end-to-end walkthrough)
+- Adapter authoring guide
+- Architecture diagram improvements
+
+### Research
+- How do we measure "recognition vs. lookup" feel? The subjective 8+/10 metric is a start — we need better eval methodology.
+- What happens to memory at scale (year-active agent with 1000+ entities)? Rollup strategies need research.
+
+## Development Setup
+
+```bash
+git clone https://github.com/getcontinuo/continuo
+cd continuo
+
+# Python 3.10+ required
+python -m venv .venv
+source .venv/bin/activate   # macOS/Linux
+.venv\Scripts\activate      # Windows
+
+pip install -e .[dev]
+```
+
+Running the smoke test:
+```bash
+cd core/
+python orchestrator.py
+```
+
+## Filing Issues
+
+Before filing:
+- Check if it's already captured in `spec/ROADMAP.md` (coming soon) or existing issues
+- If it's an adapter request, consider building it — adapters are the easiest contribution path
+- If it's a philosophy/scope question, `spec/THESIS.md` is the canonical reference
+
+## Commit Style
+
+Conventional commits preferred: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`.
+
+## Code of Conduct
+
+Be excellent to each other. If something needs formalizing later we will, but for now: assume good faith, disagree productively, don't be a jerk.
+
+## License
+
+All contributions are MIT-licensed under the project's terms. By submitting a PR you agree to license your contribution accordingly.
