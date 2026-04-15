@@ -44,7 +44,7 @@ def load_l0() -> tuple[str, list[str]]:
     Returns: (formatted_context_string, list_of_entity_keywords)
     Always fast -- reads from disk, no inference.
     """
-    with open(L0_PATH, "r") as f:
+    with open(L0_PATH, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
 
     identity = data.get("identity", {})

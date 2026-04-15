@@ -10,9 +10,10 @@ Named for *basso continuo* — the continuous bass accompaniment in Baroque musi
 
 ---
 
-## Status: Pre-Alpha (v0.0.1)
+## Status: Pre-Alpha (v0.0.2)
 
-This is the initial scaffold. The Phase 1 reference implementation (L0 + L1 personal memory orchestrator) is in `core/orchestrator.py` and works standalone. The federation layer (L5 + L6) and adapter system are being built next.
+- **v0.0.1** -- initial scaffold, Phase 1 orchestrator working standalone
+- **v0.0.2** (this release) -- L5 JSON Schema + adapter contract, base adapter module, first external adapter stub (Claude Code, discovers memory sources, full parsing TBD in v0.1.0), test suite (49 tests across orchestrator + adapter base + Claude Code adapter), CI workflow (Windows + Ubuntu + macOS x Python 3.10-3.12)
 
 **Not ready for production use.** Built in the open as a spec-and-reference-implementation for a convention we hope the ecosystem adopts.
 

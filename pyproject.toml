@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "continuo-memory"
-version = "0.0.1"
+version = "0.0.2"
 description = "Cross-agent memory federation for human-AI collaboration"
 readme = "README.md"
 license = { text = "MIT" }
@@ -53,10 +53,10 @@ dev = [
 # Entry points for adapter plugins.
 # Third-party adapters register here via their own pyproject.toml.
 [project.entry-points."continuo.adapters"]
-# claude-code = "continuo.adapters.claude_code:ClaudeCodeAdapter"
-# codex = "continuo.adapters.codex:CodexAdapter"
-# clyde = "continuo.adapters.clyde:ClydeAdapter"
-# clair = "continuo.adapters.clair:ClairAdapter"
+claude-code = "adapters.claude_code:ClaudeCodeAdapter"
+# codex = "adapters.codex:CodexAdapter"     # planned v0.2.0
+# clyde = "adapters.clyde:ClydeAdapter"     # planned v0.2.0 (native publisher)
+# clair = "adapters.clair:ClairAdapter"     # planned v0.2.0 (native publisher)
 
 [project.scripts]
 # continuo = "continuo.cli:main"
