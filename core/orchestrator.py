@@ -136,20 +136,28 @@ async def load_l1_parallel(entities: list[str]) -> str:
 
     return combined if total_tokens > estimate_tokens("\n\n## CLYDE MEMORY -- L1 ENTITY CONTEXT\n") else ""
 
-# -- L2: STUB (Phase 2) --------------------------------------------------------
+# -- L2: Episodic Memory async retrieval --------------------------------------
 
-async def query_l2_ultrarag(query: str) -> str:
+async def query_l2_ultrarag(query: str, config=None) -> str:
     """
-    L2 -- UltraRAG async retrieval stub.
-    Phase 2: replace with direct fastmcp retriever tool call.
+    L2 -- UltraRAG-backed async retrieval.
 
-    Pattern (Phase 2 implementation):
-        result = await ToolCall.retriever.retriever_search(query=query)
-        return format_l2_context(result)
+    Delegates to :func:`core.l2.query_l2` which reads config from the bundled
+    YAML file (``core/l2_config.yaml``) plus any ``CONTINUO_L2_*`` env-var
+    overrides. Returns an empty string when L2 is disabled (the default) or
+    when the retriever is unreachable -- never raises, so this call can't
+    crash a session.
+
+    Parameters
+    ----------
+    query : str
+        The user message or derived query.
+    config : L2Config, optional
+        Override the default config. When None, defaults load from YAML + env.
     """
-    # Simulate retrieval latency for testing
-    await asyncio.sleep(0)
-    return ""  # Empty until Phase 2 wires UltraRAG
+    from core.l2 import query_l2  # lazy import to keep core.l2 optional
+
+    return await query_l2(query, config=config)
 
 # -- SYSTEM PROMPT BUILDER -----------------------------------------------------
 
@@ -188,10 +196,20 @@ class Continuo:
         # Pass system_prompt to Ollama chat call
     """
 
-    def __init__(self):
+    def __init__(self, l2_config=None):
+        """
+        Parameters
+        ----------
+        l2_config : L2Config, optional
+            Configuration for the L2 layer. When None (default), L2 loads
+            config from the bundled YAML + env-var overrides; since the
+            bundled default is ``enabled: false``, L2 is a no-op unless the
+            user has opted in.
+        """
         self.l0_context, self.keywords = load_l0()
         self._l2_task: Optional[asyncio.Task] = None
         self._l2_result: str = ""
+        self._l2_config = l2_config
         print(f"[Continuo] [OK] L0 loaded -- {len(self.keywords)} entities in hot cache")
 
     async def prepare(self, user_message: str, base_instructions: str) -> str:
@@ -219,7 +237,9 @@ class Continuo:
 
         # Fire L1 + L2 in parallel
         l1_task = asyncio.create_task(load_l1_parallel(matched_entities))
-        self._l2_task = asyncio.create_task(query_l2_ultrarag(user_message))
+        self._l2_task = asyncio.create_task(
+            query_l2_ultrarag(user_message, self._l2_config)
+        )
 
         # Wait for L1 with timeout (fast -- file reads)
         try:

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "continuo-memory"
-version = "0.0.3"
+version = "0.0.4"
 description = "Cross-agent memory federation for human-AI collaboration"
 readme = "README.md"
 license = { text = "MIT" }
@@ -49,6 +49,11 @@ dev = [
     "jsonschema>=4.0",
     "ruff>=0.4",
     "mypy>=1.10",
+]
+# L2 episodic memory via UltraRAG / any MCP retriever.
+# Optional because L0+L1 work standalone; L2 only activates when enabled.
+ultrarag = [
+    "fastmcp>=2.0",
 ]
 
 # Entry points for adapter plugins.

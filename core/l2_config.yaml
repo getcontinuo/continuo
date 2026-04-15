@@ -1,0 +1,35 @@
+# Continuo L2 (Episodic Memory) Configuration
+#
+# L2 is the async-retrieval layer that fires during the human's response
+# window (~3-8s) to enrich context without blocking the AI's first reply.
+# Default backend is UltraRAG 3.0 via MCP, but any MCP-compatible retriever
+# server works.
+#
+# DISABLED BY DEFAULT so Continuo runs out of the box without requiring
+# UltraRAG setup. Phase 1 (L0+L1) is fully usable with enabled: false.
+#
+# Environment variables override these values:
+#   CONTINUO_L2_ENABLED   -> enabled (true/false/1/0/yes/no)
+#   CONTINUO_L2_ENDPOINT  -> endpoint
+#   CONTINUO_L2_TOOL      -> tool_name
+#   CONTINUO_L2_TOP_K     -> top_k
+#   CONTINUO_L2_TIMEOUT   -> timeout_seconds
+
+# Set to true and provide a reachable endpoint to activate L2.
+enabled: false
+
+# MCP server URL of the retriever (typically UltraRAG).
+# Use the ultrarag MCP daemon port as configured by the user's UltraRAG install.
+endpoint: "http://localhost:8765"
+
+# Name of the MCP tool to call on that server.
+# UltraRAG 3.0 convention: "retriever_search"
+tool_name: "retriever_search"
+
+# Number of results to request from the retriever per query.
+top_k: 5
+
+# How long to wait for L2 retrieval before giving up. If L2 misses this
+# window, the current turn proceeds with L0+L1 only and L2 result is
+# discarded (or picked up on the next turn if still completing).
+timeout_seconds: 8.0
