@@ -13,7 +13,8 @@ Named for *basso continuo* — the continuous bass accompaniment in Baroque musi
 ## Status: Pre-Alpha (v0.0.2)
 
 - **v0.0.1** -- initial scaffold, Phase 1 orchestrator working standalone
-- **v0.0.2** (this release) -- L5 JSON Schema + adapter contract, base adapter module, first external adapter stub (Claude Code, discovers memory sources, full parsing TBD in v0.1.0), test suite (49 tests across orchestrator + adapter base + Claude Code adapter), CI workflow (Windows + Ubuntu + macOS x Python 3.10-3.12)
+- **v0.0.2** -- L5 JSON Schema + adapter contract, base adapter module, first external adapter stub (Claude Code, discovers memory sources), test suite (49 tests), CI workflow (Windows + Ubuntu + macOS x Python 3.10-3.12)
+- **v0.0.3** (this release) -- Claude Code adapter full parsing: PROJECTS/*/OVERVIEW.md -> project entities, LOG/*.md -> sessions, auto-memory frontmatter -> entities, memory.jsonl knowledge graph -> entities. Entity dedupe across sources. Conservative visibility policy: entities typed as `person` default to PRIVATE; entities whose observations contain credential-like strings (API keys, tokens, `.env` references, Stripe keys, etc.) are filtered before federation. JSON Schema validation round-trip test via `jsonschema`. Adapter tested against live data produces 55 entities + 46 sessions on the author's machine with 0 credential leaks.
 
 **Not ready for production use.** Built in the open as a spec-and-reference-implementation for a convention we hope the ecosystem adopts.
 
