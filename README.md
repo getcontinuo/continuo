@@ -10,7 +10,7 @@ Named for *basso continuo* — the continuous bass accompaniment in Baroque musi
 
 ---
 
-## Status: Pre-Alpha (v0.0.2)
+## Status: Pre-Alpha (v0.0.7)
 
 - **v0.0.1** -- initial scaffold, Phase 1 orchestrator working standalone
 - **v0.0.2** -- L5 JSON Schema + adapter contract, base adapter module, first external adapter stub (Claude Code, discovers memory sources), test suite (49 tests), CI workflow (Windows + Ubuntu + macOS x Python 3.10-3.12)
@@ -18,6 +18,7 @@ Named for *basso continuo* — the continuous bass accompaniment in Baroque musi
 - **v0.0.4** -- L2 UltraRAG async integration. `core/l2.py` with `L2Config` (YAML + env-var overrides), `L2Client` Protocol, `FastMCPL2Client`, `query_l2()` that never blocks / never raises. Disabled by default; opt in via `core/l2_config.yaml` or `CONTINUO_L2_ENABLED=true`. Optional extra: `pip install 'continuo-memory[ultrarag]'`.
 - **v0.0.5** -- L6 MCP server. The federation layer. `core/l6_store.py` loads every `~/agent-library/agents/*.l5.yaml`, builds a cross-agent entity index, and exposes query primitives (`list_agents`, `find_entity`, `list_recent_work`, `get_cross_agent_summary`) with visibility filtering re-applied at query time. `core/l6_server.py` wraps the store in a `fastmcp` server exposing `agent-library://` resources + `query_agent_memory` / `list_recent_work` / `find_entity` / `get_cross_agent_summary` MCP tools. Launch via `python -m core.l6_server`. Optional extra: `pip install 'continuo-memory[server]'`. 33 new tests (149 total): store query semantics, private-entity filter, reload behavior, lazy-import guard, server construction.
 - **v0.0.6** (this release) -- Codex adapter + atomic L5 write. `adapters/codex.py` reads `~/.codex/session_index.jsonl` newest-first, resolves each entry's rollout file to pull `session_meta.cwd`, emits `Session` rows. Dedupes `thread_name`s into topic-type `Entity` rows with `last_touched` preserved. Registered under `continuo.adapters` entry point. New `core/l5_io.py` provides `write_l5()` / `write_l5_dict()` with tmp+rename atomic semantics so L6 file watchers never see half-written manifests. 39 new tests (188 total): session_index parsing, rollout resolution, timestamp normalization, dedupe, schema round-trip, Codex L5 round-tripped through `L6Store` end-to-end.
+- **v0.0.7** -- Generic Codex memory pipeline + first-class CLI. `adapters/codex.py` now treats `~/.codex/memories/*` as the primary distilled source, enriches with rollout chronology and structured `apply_patch` file evidence, and defaults Codex-derived entities/sessions to `team` visibility. New `continuo codex export`, `continuo codex build-context`, and `continuo codex eval` commands turn that normalized model into L5 federation output plus Codex-oriented L0/L1 timing artifacts. `core/l6_store.py` and `core/l6_server.py` now support `access_level=public|team|private` while preserving `include_private` compatibility.
 
 **Not ready for production use.** Built in the open as a spec-and-reference-implementation for a convention we hope the ecosystem adopts.
 
@@ -70,6 +71,16 @@ asyncio.run(main())
 
 This loads the L0 hot cache and any matching L1 synopses, then prints the fully-assembled system prompt ready to pass to an Ollama / OpenAI / Claude API call.
 
+## Quick Start (Codex CLI)
+
+```bash
+continuo codex export --access-level team
+continuo codex build-context --out-dir ./build/codex-context
+continuo codex eval --fixtures
+```
+
+This generic Codex path is designed for org-wide distribution: local Codex memories stay `team` by default, public federation requires explicit promotion, and generated L0/L1 artifacts live separately from the repo's static Clyde examples.
+
 ## Roadmap
 
 - **v0.0.1** (now) — Scaffold + Phase 1 orchestrator (L0 + L1, manual files, Ollama-compatible)
@@ -103,7 +114,13 @@ Continuo is free (MIT) and welcomes contributions — especially adapters for ne
 
 ## About
 
-Continuo is a project by [RADLAB LLC](https://continuo.cloud). Designed with Ryan Davis (RADMAN). Co-authored with Claude (Anthropic).
+Continuo is an open-source memory protocol and reference implementation seeded by [RADLAB LLC](https://continuo.cloud). Designed with Ryan Davis (RADMAN), with major research and implementation contributions from Claude and Codex.
+
+## Contributors
+
+- Ryan Davis -- creator, thesis, architecture, implementation direction
+- Claude -- thesis drafting, architecture planning, early implementation
+- Codex -- Codex adapter expansion, CLI implementation, timing-artifact generation, access-level model
 
 ## Other RADLAB Projects
 

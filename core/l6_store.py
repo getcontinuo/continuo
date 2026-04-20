@@ -22,9 +22,10 @@ Each `*.l5.yaml` file is an L5 manifest produced by an adapter. See
 
 Design invariants
 -----------------
-- ``include_private=False`` (default) never returns entities whose effective
-  visibility is PRIVATE. This re-applies the filter at query time as a
-  second line of defense against adapters that forget.
+- Query surfaces default to ``access_level="public"``. That means TEAM and
+  PRIVATE rows stay hidden unless a caller explicitly asks for broader access.
+- ``include_private`` remains as a one-release compatibility shim:
+  ``False -> public`` and ``True -> private``.
 - Malformed manifests are skipped with a warning; one broken file cannot
   take down the whole store.
 - Reload is on-demand (``reload_agent`` / ``reload_all``). File-watching is
@@ -38,7 +39,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import yaml
 
@@ -77,7 +78,7 @@ class SessionRef:
 
     agent: str
     date: str
-    cwd: Optional[str] = None
+    cwd: str | None = None
     project_focus: list[str] = field(default_factory=list)
     key_actions: list[str] = field(default_factory=list)
     files_touched: list[str] = field(default_factory=list)
@@ -134,12 +135,27 @@ def _session_visibility(session: dict) -> str:
     return "public"
 
 
-def _is_visible(thing: dict, include_private: bool) -> bool:
-    """Return True if this entity/session should be emitted given the policy."""
+def _resolve_access_level(
+    include_private: bool = False, access_level: str | None = None
+) -> str:
+    """Resolve access level, keeping `include_private` as a compatibility shim."""
+    if access_level is None:
+        return "private" if include_private else "public"
+    normalized = access_level.strip().lower()
+    if normalized not in {"public", "team", "private"}:
+        raise ValueError(f"unsupported access_level: {access_level}")
+    return normalized
+
+
+def _visibility_rank(value: str) -> int:
+    return {"public": 0, "team": 1, "private": 2}[value]
+
+
+def _is_visible(thing: dict, access_level: str) -> bool:
+    """Return True if this entity/session is visible at the given access level."""
     vis = _entity_visibility(thing) if "name" in thing else _session_visibility(thing)
-    if vis == "private" and not include_private:
-        return False
-    return True
+    normalized_vis = vis if vis in {"public", "team", "private"} else "public"
+    return _visibility_rank(normalized_vis) <= _visibility_rank(access_level)
 
 
 # -- Store ---------------------------------------------------------------------
@@ -158,7 +174,7 @@ class L6Store:
         ``neurolayer init`` creates the parent dir).
     """
 
-    def __init__(self, library_path: Optional[Path] = None) -> None:
+    def __init__(self, library_path: Path | None = None) -> None:
         self.library_path = Path(library_path) if library_path else DEFAULT_LIBRARY_PATH
         self._manifests: dict[str, dict] = {}
         self._entity_index: dict[str, set[str]] = defaultdict(set)
@@ -202,7 +218,7 @@ class L6Store:
     def _load_one(self, path: Path) -> bool:
         """Load one L5 manifest. Returns True on success, False on any error."""
         try:
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 data = yaml.safe_load(f)
         except (yaml.YAMLError, OSError) as e:
             logger.warning("Failed to load L5 manifest %s: %s", path, e)
@@ -238,8 +254,11 @@ class L6Store:
         return sorted(self._manifests.keys())
 
     def get_agent_manifest(
-        self, agent_id: str, include_private: bool = False
-    ) -> Optional[dict]:
+        self,
+        agent_id: str,
+        include_private: bool = False,
+        access_level: str | None = None,
+    ) -> dict | None:
         """
         Return a copy of the agent's manifest, with private entities /
         sessions filtered unless ``include_private=True``.
@@ -249,21 +268,28 @@ class L6Store:
         manifest = self._manifests.get(agent_id)
         if manifest is None:
             return None
+        resolved_access = _resolve_access_level(
+            include_private=include_private,
+            access_level=access_level,
+        )
         filtered = dict(manifest)
         filtered["known_entities"] = [
             e
             for e in manifest.get("known_entities") or []
-            if isinstance(e, dict) and _is_visible(e, include_private)
+            if isinstance(e, dict) and _is_visible(e, resolved_access)
         ]
         filtered["recent_sessions"] = [
             s
             for s in manifest.get("recent_sessions") or []
-            if isinstance(s, dict) and _is_visible(s, include_private)
+            if isinstance(s, dict) and _is_visible(s, resolved_access)
         ]
         return filtered
 
     def find_entity(
-        self, name: str, include_private: bool = False
+        self,
+        name: str,
+        include_private: bool = False,
+        access_level: str | None = None,
     ) -> list[EntityMatch]:
         """
         Look up an entity by name (case-insensitive). Returns a list of
@@ -276,6 +302,10 @@ class L6Store:
         key = name.strip().lower()
         if not key:
             return []
+        resolved_access = _resolve_access_level(
+            include_private=include_private,
+            access_level=access_level,
+        )
         agent_ids = sorted(self._entity_index.get(key, set()))
         if not agent_ids:
             return []
@@ -298,7 +328,7 @@ class L6Store:
                         for a in aliases
                     ):
                         continue
-                if not _is_visible(entity, include_private):
+                if not _is_visible(entity, resolved_access):
                     continue
                 match = by_exact_name.setdefault(
                     ent_name, EntityMatch(name=ent_name)
@@ -319,9 +349,10 @@ class L6Store:
 
     def list_recent_work(
         self,
-        since: Optional[datetime] = None,
-        agent: Optional[str] = None,
+        since: datetime | None = None,
+        agent: str | None = None,
         include_private: bool = False,
+        access_level: str | None = None,
     ) -> list[SessionRef]:
         """
         Flatten sessions from one or all agents into a unified list.
@@ -336,7 +367,11 @@ class L6Store:
         include_private : bool
             Whether to include PRIVATE-tagged sessions. Default False.
         """
-        cutoff: Optional[date] = since.date() if since is not None else None
+        cutoff: date | None = since.date() if since is not None else None
+        resolved_access = _resolve_access_level(
+            include_private=include_private,
+            access_level=access_level,
+        )
         results: list[SessionRef] = []
         manifests = (
             {agent: self._manifests[agent]}
@@ -347,7 +382,7 @@ class L6Store:
             for session in manifest.get("recent_sessions") or []:
                 if not isinstance(session, dict):
                     continue
-                if not _is_visible(session, include_private):
+                if not _is_visible(session, resolved_access):
                     continue
                 session_date = session.get("date")
                 if cutoff is not None and isinstance(session_date, str):
@@ -371,7 +406,10 @@ class L6Store:
         return results
 
     def get_cross_agent_summary(
-        self, project: str, include_private: bool = False
+        self,
+        project: str,
+        include_private: bool = False,
+        access_level: str | None = None,
     ) -> ProjectSummary:
         """
         Roll up everything the federation knows about a project (or entity).
@@ -382,7 +420,15 @@ class L6Store:
         """
         key = project.strip()
         lowered = key.lower()
-        entities = self.find_entity(key, include_private=include_private)
+        resolved_access = _resolve_access_level(
+            include_private=include_private,
+            access_level=access_level,
+        )
+        entities = self.find_entity(
+            key,
+            include_private=include_private,
+            access_level=resolved_access,
+        )
         sessions: list[SessionRef] = []
         agent_set: set[str] = set()
         for e in entities:
@@ -396,7 +442,7 @@ class L6Store:
                     isinstance(p, str) and p.strip().lower() == lowered for p in focus
                 ):
                     continue
-                if not _is_visible(session, include_private):
+                if not _is_visible(session, resolved_access):
                     continue
                 sessions.append(
                     SessionRef(

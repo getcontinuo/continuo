@@ -8,22 +8,23 @@ from pathlib import Path
 
 import pytest
 
+from adapters import codex as codex_module
 from adapters.base import (
+    SPEC_VERSION,
     AdapterDiscoveryError,
     ContinuoAdapter,
     HealthStatus,
     L5Manifest,
-    SPEC_VERSION,
 )
-from adapters import codex as codex_module
 from adapters.codex import (
     CodexAdapter,
+    _extract_project_candidates,
     _find_rollout_file,
+    _parse_memory_text,
     _parse_session_index,
     _read_session_meta,
     _timestamp_to_iso_date,
 )
-
 
 # -- Fixture -------------------------------------------------------------------
 
@@ -41,6 +42,11 @@ def isolated_home(tmp_path, monkeypatch):
         (fake_home / ".codex" / "sessions").mkdir()
         return fake_home / ".codex"
 
+    def create_memories():
+        memories = fake_home / ".codex" / "memories"
+        (memories / "rollout_summaries").mkdir(parents=True, exist_ok=True)
+        return memories
+
     def add_index_entry(codex_home, session_id: str, thread_name: str, updated_at: str):
         idx = codex_home / "session_index.jsonl"
         with open(idx, "a", encoding="utf-8") as f:
@@ -55,18 +61,42 @@ def isolated_home(tmp_path, monkeypatch):
                 + "\n"
             )
 
-    def add_rollout(codex_home, date_parts: tuple[int, int, int], session_id: str, cwd: str, timestamp: str):
+    def add_rollout(
+        codex_home,
+        date_parts: tuple[int, int, int],
+        session_id: str,
+        cwd: str,
+        timestamp: str,
+        extra_records: list[dict] | None = None,
+        meta_extra: dict | None = None,
+    ):
         y, m, d = date_parts
         date_dir = codex_home / "sessions" / f"{y:04d}" / f"{m:02d}" / f"{d:02d}"
         date_dir.mkdir(parents=True, exist_ok=True)
-        rollout = date_dir / f"rollout-{timestamp.replace(':', '-').replace('.', '-')}-{session_id}.jsonl"
+        rollout_name = (
+            f"rollout-{timestamp.replace(':', '-').replace('.', '-')}-{session_id}.jsonl"
+        )
+        rollout = date_dir / rollout_name
         payload = {"id": session_id, "timestamp": timestamp, "cwd": cwd}
+        if meta_extra:
+            payload.update(meta_extra)
         with open(rollout, "w", encoding="utf-8") as f:
             f.write(
                 json.dumps({"timestamp": timestamp, "type": "session_meta", "payload": payload})
                 + "\n"
             )
-            f.write(json.dumps({"timestamp": timestamp, "type": "user_input", "payload": {"text": "hi"}}) + "\n")
+            f.write(
+                json.dumps(
+                    {
+                        "timestamp": timestamp,
+                        "type": "user_input",
+                        "payload": {"text": "hi"},
+                    }
+                )
+                + "\n"
+            )
+            for record in extra_records or []:
+                f.write(json.dumps(record) + "\n")
         return rollout
 
     def create_codex_brain():
@@ -75,12 +105,30 @@ def isolated_home(tmp_path, monkeypatch):
         (cb / "CURRENT.md.txt").write_text("# Current focus\n", encoding="utf-8")
         return cb
 
+    def write_memory_file(relative_path: str, content: str):
+        memories = create_memories()
+        target = memories / relative_path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8")
+        return target
+
+    def write_codex_brain_file(relative_path: str, content: str):
+        cb = fake_home / "codex-brain"
+        cb.mkdir(exist_ok=True)
+        target = cb / relative_path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8")
+        return target
+
     return {
         "home": fake_home,
         "create_codex_home": create_codex_home,
+        "create_memories": create_memories,
         "add_index_entry": add_index_entry,
         "add_rollout": add_rollout,
         "create_codex_brain": create_codex_brain,
+        "write_memory_file": write_memory_file,
+        "write_codex_brain_file": write_codex_brain_file,
     }
 
 
@@ -163,9 +211,27 @@ def test_parse_session_index_newest_first(tmp_path):
 def test_parse_session_index_skips_malformed_lines(tmp_path, caplog):
     idx = tmp_path / "session_index.jsonl"
     with open(idx, "w", encoding="utf-8") as f:
-        f.write(json.dumps({"id": "a", "thread_name": "Good", "updated_at": "2026-04-15T00:00:00Z"}) + "\n")
+        f.write(
+            json.dumps(
+                {
+                    "id": "a",
+                    "thread_name": "Good",
+                    "updated_at": "2026-04-15T00:00:00Z",
+                }
+            )
+            + "\n"
+        )
         f.write("not json at all\n")
-        f.write(json.dumps({"id": "b", "thread_name": "Also good", "updated_at": "2026-04-14T00:00:00Z"}) + "\n")
+        f.write(
+            json.dumps(
+                {
+                    "id": "b",
+                    "thread_name": "Also good",
+                    "updated_at": "2026-04-14T00:00:00Z",
+                }
+            )
+            + "\n"
+        )
     with caplog.at_level("WARNING"):
         entries = _parse_session_index(idx)
     assert {e["id"] for e in entries} == {"a", "b"}
@@ -177,7 +243,13 @@ def test_parse_session_index_empty_on_missing_file(tmp_path):
 
 def test_find_rollout_file_matches_by_id(isolated_home):
     codex_home = isolated_home["create_codex_home"]()
-    isolated_home["add_rollout"](codex_home, (2026, 4, 15), "abc123", "/tmp", "2026-04-15T12:00:00Z")
+    isolated_home["add_rollout"](
+        codex_home,
+        (2026, 4, 15),
+        "abc123",
+        "/tmp",
+        "2026-04-15T12:00:00Z",
+    )
     found = _find_rollout_file(codex_home, "abc123")
     assert found is not None
     assert "abc123" in found.name
@@ -225,6 +297,69 @@ def test_timestamp_parsing_returns_none_for_garbage():
     assert _timestamp_to_iso_date("") is None
 
 
+def test_parse_memory_text_stops_preference_capture_at_new_sections():
+    parsed = _parse_memory_text(
+        """## Preference signals
+
+- prefer backend-first delivery
+
+Key steps:
+- implemented the API
+
+Failures and how to do differently:
+- do less guessing
+
+References:
+- docs/playbook.md
+"""
+    )
+
+    assert parsed["preferences"] == ["prefer backend-first delivery"]
+    assert "implemented the API" not in parsed["preferences"]
+    assert "do less guessing" not in parsed["preferences"]
+    assert "docs/playbook.md" not in parsed["preferences"]
+
+
+def test_extract_project_candidates_filters_glue_words_and_generic_workstreams():
+    candidates = _extract_project_candidates(
+        {
+            "keywords": [
+                "Coolculator",
+                "ShipStable",
+                "Android Studio",
+                "Claude",
+                "Google Play Console",
+                "OneDrive",
+                "robocopy",
+            ],
+            "task_groups": [
+                "Claude workflow handoff",
+                "Coolculator monorepo bootstrap and Windows-to-Mac handoff",
+                "OneDrive restore handoff",
+                "robocopy backup handoff",
+                "ShipStable reset handoff",
+                "Windows fresh-install recovery for drive layout",
+            ],
+            "task_titles": [
+                "Align workflow with Codex",
+                "Review Android parity changes",
+                "Locate DNS handoff doc",
+                "Install Android Studio and restore GitHub access",
+            ],
+        }
+    )
+
+    assert "coolculator" in candidates
+    assert "shipstable" in candidates
+    assert "and" not in candidates
+    assert "align" not in candidates
+    assert "android" not in candidates
+    assert "claude" not in candidates
+    assert "install" not in candidates
+    assert "onedrive" not in candidates
+    assert "robocopy" not in candidates
+
+
 # -- export_sessions -----------------------------------------------------------
 
 
@@ -261,6 +396,66 @@ def test_export_sessions_with_missing_rollout_still_emits_session(isolated_home)
     sessions = CodexAdapter().export_sessions(since=datetime(2026, 4, 1, tzinfo=timezone.utc))
     assert len(sessions) == 1
     assert sessions[0].cwd is None
+
+
+def test_export_sessions_collects_files_touched_from_structured_apply_patch_only(
+    isolated_home,
+):
+    codex_home = isolated_home["create_codex_home"]()
+    isolated_home["add_index_entry"](
+        codex_home,
+        "sess1",
+        "Patch some files",
+        "2026-04-15T12:00:00Z",
+    )
+    isolated_home["add_rollout"](
+        codex_home,
+        (2026, 4, 15),
+        "sess1",
+        "/workspace/project",
+        "2026-04-15T12:00:00Z",
+        extra_records=[
+            {
+                "timestamp": "2026-04-15T12:01:00Z",
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call",
+                    "name": "apply_patch",
+                    "arguments": (
+                        "*** Begin Patch\n"
+                        "*** Update File: apps/api/app.py\n"
+                        "@@\n"
+                        "-old\n"
+                        "+new\n"
+                        "*** End Patch\n"
+                    ),
+                },
+            },
+            {
+                "timestamp": "2026-04-15T12:02:00Z",
+                "type": "response_item",
+                "payload": {
+                    "type": "message",
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "output_text",
+                            "text": (
+                                "I also mentioned docs/README.md in chat, but "
+                                "that should not count."
+                            ),
+                        }
+                    ],
+                },
+            },
+        ],
+    )
+
+    sessions = CodexAdapter().export_sessions(
+        since=datetime(2026, 4, 1, tzinfo=timezone.utc)
+    )
+    assert len(sessions) == 1
+    assert sessions[0].files_touched == ["apps/api/app.py"]
 
 
 def test_export_sessions_empty_when_no_codex_home(isolated_home):
@@ -322,6 +517,170 @@ def test_export_l5_raises_when_nothing_discovered(isolated_home):
         CodexAdapter().export_l5()
 
 
+def test_export_l5_extracts_projects_topics_preferences_and_team_visibility(
+    isolated_home,
+):
+    codex_home = isolated_home["create_codex_home"]()
+    isolated_home["add_index_entry"](
+        codex_home,
+        "cool1",
+        "Plan Coolculator Mac handoff",
+        "2026-04-15T12:00:00Z",
+    )
+    isolated_home["add_rollout"](
+        codex_home,
+        (2026, 4, 15),
+        "cool1",
+        "/workspace/coolculator",
+        "2026-04-15T12:00:00Z",
+        extra_records=[
+            {
+                "timestamp": "2026-04-15T12:01:00Z",
+                "type": "response_item",
+                "payload": {
+                    "type": "function_call",
+                    "name": "apply_patch",
+                    "arguments": (
+                        "*** Begin Patch\n"
+                        "*** Update File: apps/web/src/App.tsx\n"
+                        "@@\n"
+                        "-old\n"
+                        "+new\n"
+                        "*** End Patch\n"
+                    ),
+                },
+            }
+        ],
+        meta_extra={"model_provider": "openai", "cli_version": "0.200.0"},
+    )
+    isolated_home["write_memory_file"](
+        "MEMORY.md",
+        """# Task Group: Coolculator monorepo bootstrap and Mac handoff
+scope: generic
+
+## Task 1: Build the shared contracts
+
+### keywords
+
+- Coolculator
+- Fastify
+- Jetpack Compose
+
+## User preferences
+
+- prefer backend-first delivery
+""",
+    )
+    isolated_home["write_memory_file"](
+        "raw_memories.md",
+        """# Raw Memories
+
+## Thread `cool-thread`
+updated_at: 2026-04-15T12:00:00+00:00
+cwd: /workspace/coolculator
+rollout_path: /tmp/cool.jsonl
+
+---
+description: Coolculator monorepo workstream.
+task: build-context-export
+task_group: coolculator-monorepo
+keywords: Coolculator, SwiftUI, Fastify, Mac handoff
+---
+
+Preference signals:
+- default to backend-first delivery for Coolculator
+
+Reusable knowledge:
+- Coolculator is the active product name.
+""",
+    )
+    isolated_home["write_memory_file"](
+        "rollout_summaries/2026-04-15-coolculator.md",
+        """thread_id: cool-thread
+updated_at: 2026-04-15T12:00:00+00:00
+
+# Rebuilt Coolculator into a new monorepo.
+
+## Task 1: Windows-to-Mac handoff
+Outcome: success
+
+Preference signals:
+- keep a clean Windows-to-Mac checkpoint
+""",
+    )
+    isolated_home["write_codex_brain_file"](
+        "LOG/2026-04-15.md",
+        "# Coolculator notes\n\nTrack the handoff carefully.\n",
+    )
+
+    manifest = CodexAdapter().export_l5()
+
+    projects = [e for e in manifest.known_entities if e.type == "project"]
+    topics = [e for e in manifest.known_entities if e.type == "topic"]
+    preferences = [e for e in manifest.known_entities if e.type == "preference"]
+
+    assert any(p.name == "Coolculator" for p in projects)
+    assert any("mac handoff" in t.name.lower() for t in topics)
+    assert any(
+        "backend-first" in ((p.summary or p.name).lower()) for p in preferences
+    )
+    assert manifest.recent_sessions[0].project_focus == ["Coolculator"]
+    assert manifest.recent_sessions[0].files_touched == ["apps/web/src/App.tsx"]
+    assert all(e.visibility == codex_module.Visibility.TEAM for e in manifest.known_entities)
+    assert all(s.visibility == codex_module.Visibility.TEAM for s in manifest.recent_sessions)
+
+
+def test_export_l5_prefers_named_project_from_memory_keywords_over_date_path(
+    isolated_home,
+):
+    codex_home = isolated_home["create_codex_home"]()
+    isolated_home["add_index_entry"](
+        codex_home,
+        "s1",
+        "Finish Windows-side Android work, then commit/push and hand off",
+        "2026-04-15T12:00:00Z",
+    )
+    isolated_home["add_rollout"](
+        codex_home,
+        (2026, 4, 15),
+        "s1",
+        "C:\\Users\\cumul\\Documents\\Codex\\2026-04-11-new-project",
+        "2026-04-15T12:00:00Z",
+    )
+    isolated_home["write_memory_file"](
+        "MEMORY.md",
+        """# Task Group: Coolculator monorepo bootstrap and Windows-to-Mac handoff
+scope: generic
+
+### keywords
+
+- Coolculator
+- SwiftUI
+- Jetpack Compose
+""",
+    )
+    isolated_home["write_memory_file"](
+        "raw_memories.md",
+        """# Raw Memories
+
+## Thread `s1`
+updated_at: 2026-04-15T12:00:00+00:00
+
+---
+task_group: coolculator-monorepo
+keywords: Coolculator, Fastify, Mac handoff
+---
+""",
+    )
+
+    manifest = CodexAdapter().export_l5()
+
+    projects = [entity.name for entity in manifest.known_entities if entity.type == "project"]
+    assert "Coolculator" in projects
+    assert "2026 04 11 New Project" not in projects
+    assert manifest.recent_sessions[0].project_focus == ["Coolculator"]
+
+
 # -- Integration: round-trip through write_l5 + L6Store -----------------------
 
 
@@ -342,6 +701,6 @@ def test_codex_l5_can_round_trip_through_l6_store(isolated_home, tmp_path):
 
     store = L6Store(library)
     assert "codex" in store.list_agents()
-    matches = store.find_entity("Federation test")
+    matches = store.find_entity("Federation test", access_level="team")
     assert len(matches) == 1
     assert "codex" in matches[0].agents

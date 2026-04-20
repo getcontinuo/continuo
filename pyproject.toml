@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "continuo-memory"
-version = "0.0.6"
+version = "0.0.7"
 description = "Cross-agent memory federation for human-AI collaboration"
 readme = "README.md"
 license = { text = "MIT" }
@@ -70,7 +70,7 @@ codex = "adapters.codex:CodexAdapter"
 # clair = "adapters.clair:ClairAdapter"     # same pattern -- native publisher
 
 [project.scripts]
-# continuo = "continuo.cli:main"
+continuo = "cli.main:main"
 
 [project.urls]
 Homepage = "https://continuo.cloud"

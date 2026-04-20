@@ -15,7 +15,6 @@ from core.l6_store import (
     SessionRef,
 )
 
-
 # -- Fixture -------------------------------------------------------------------
 
 
@@ -66,7 +65,7 @@ def test_default_library_path_is_home_agent_library():
     """Default constructor points at ~/agent-library, not cwd."""
     from core.l6_store import DEFAULT_LIBRARY_PATH
 
-    assert DEFAULT_LIBRARY_PATH == Path.home() / "agent-library"
+    assert Path.home() / "agent-library" == DEFAULT_LIBRARY_PATH
 
 
 # -- Loading manifests ---------------------------------------------------------
@@ -203,6 +202,22 @@ def test_find_entity_filters_private_by_default(library):
     assert len(store.find_entity("Secret", include_private=True)) == 1
 
 
+def test_find_entity_team_hidden_from_public_visible_to_team(library):
+    library["write"](
+        "a",
+        _manifest(
+            "a",
+            entities=[
+                {"name": "Team secret", "visibility": "team"},
+            ],
+        ),
+    )
+    store = L6Store(library["path"])
+    assert store.find_entity("Team secret") == []
+    assert len(store.find_entity("Team secret", access_level="team")) == 1
+    assert len(store.find_entity("Team secret", include_private=True)) == 1
+
+
 def test_find_entity_aggregates_tags_across_agents(library):
     library["write"](
         "a", _manifest("a", entities=[{"name": "X", "tags": ["alpha", "shared"]}])
@@ -292,6 +307,25 @@ def test_list_recent_work_skips_private_sessions(library):
     assert len(with_private) == 2
 
 
+def test_list_recent_work_team_hidden_from_public_visible_to_team(library):
+    library["write"](
+        "a",
+        _manifest(
+            "a",
+            sessions=[
+                {
+                    "date": "2026-04-15",
+                    "key_actions": ["team-only"],
+                    "visibility": "team",
+                }
+            ],
+        ),
+    )
+    store = L6Store(library["path"])
+    assert store.list_recent_work() == []
+    assert len(store.list_recent_work(access_level="team")) == 1
+
+
 def test_list_recent_work_skips_malformed_dates(library):
     library["write"](
         "a",
@@ -352,6 +386,26 @@ def test_get_agent_manifest_include_private_shows_private(library):
     manifest = store.get_agent_manifest("a", include_private=True)
     names = [e["name"] for e in manifest["known_entities"]]
     assert "Secret" in names
+
+
+def test_get_agent_manifest_access_level_team_includes_team_not_private(library):
+    library["write"](
+        "a",
+        _manifest(
+            "a",
+            entities=[
+                {"name": "Public"},
+                {"name": "Team only", "visibility": "team"},
+                {"name": "Private", "visibility": "private"},
+            ],
+        ),
+    )
+    store = L6Store(library["path"])
+    manifest = store.get_agent_manifest("a", access_level="team")
+    names = [e["name"] for e in manifest["known_entities"]]
+    assert "Public" in names
+    assert "Team only" in names
+    assert "Private" not in names
 
 
 # -- get_cross_agent_summary ---------------------------------------------------

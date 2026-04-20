@@ -31,10 +31,10 @@ Tools exposed
   Cross-agent find for a topic restricted to one agent's manifest.
 - ``list_recent_work(since, agent)``
   Sessions across agents (or one) since a given ISO-8601 date.
-- ``find_entity(name, include_private)``
-  Cross-agent entity lookup by name. ``include_private`` defaults to
-  False; callers that need unredacted output must pass True explicitly.
-- ``get_cross_agent_summary(project, include_private)``
+- ``find_entity(name, access_level, include_private)``
+  Cross-agent entity lookup by name. ``access_level`` defaults to
+  ``public``. ``include_private`` remains as a compatibility shim.
+- ``get_cross_agent_summary(project, access_level, include_private)``
   Roll-up: all agents + sessions + entities relating to one project.
 """
 
@@ -44,7 +44,7 @@ import argparse
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from core.l6_store import DEFAULT_LIBRARY_PATH, L6Store
 
@@ -84,8 +84,8 @@ def create_l6_server(store: L6Store, name: str = "continuo-l6") -> Any:
         ``mcp.run()`` (stdio), ``await mcp.run_async()``, or by passing
         it to an ASGI server for HTTP transport.
     """
-    FastMCP = _require_fastmcp()
-    mcp = FastMCP(name)
+    fastmcp_cls = _require_fastmcp()
+    mcp = fastmcp_cls(name)
 
     # ---- Resources ------------------------------------------------------------
 
@@ -111,12 +111,20 @@ def create_l6_server(store: L6Store, name: str = "continuo-l6") -> Any:
     @mcp.resource("agent-library://entities/{name}")
     def get_entity_resource(name: str) -> list[dict]:
         """Cross-agent view of one entity by name."""
-        return [m.to_dict() for m in store.find_entity(name, include_private=False)]
+        return [
+            m.to_dict()
+            for m in store.find_entity(name, include_private=False, access_level="public")
+        ]
 
     # ---- Tools ---------------------------------------------------------------
 
     @mcp.tool()
-    def query_agent_memory(agent: str, topic: str) -> dict:
+    def query_agent_memory(
+        agent: str,
+        topic: str,
+        access_level: str = "public",
+        include_private: bool = False,
+    ) -> dict:
         """
         Find entries in one agent's L5 that match a topic.
 
@@ -134,18 +142,27 @@ def create_l6_server(store: L6Store, name: str = "continuo-l6") -> Any:
         """
         matches = [
             m
-            for m in store.find_entity(topic, include_private=False)
+            for m in store.find_entity(
+                topic,
+                include_private=include_private,
+                access_level=access_level,
+            )
             if agent in m.agents
         ]
         return {
             "agent": agent,
             "topic": topic,
+            "access_level": access_level,
+            "include_private": include_private,
             "matches": [m.to_dict() for m in matches],
         }
 
     @mcp.tool()
     def list_recent_work(
-        since: Optional[str] = None, agent: Optional[str] = None
+        since: str | None = None,
+        agent: str | None = None,
+        access_level: str = "public",
+        include_private: bool = False,
     ) -> dict:
         """
         Return sessions across agents (or a single agent) since a given date.
@@ -158,7 +175,7 @@ def create_l6_server(store: L6Store, name: str = "continuo-l6") -> Any:
         agent : str, optional
             Filter to one agent's sessions.
         """
-        cutoff: Optional[datetime] = None
+        cutoff: datetime | None = None
         if since:
             try:
                 # Accept both date and datetime ISO strings
@@ -166,23 +183,33 @@ def create_l6_server(store: L6Store, name: str = "continuo-l6") -> Any:
             except ValueError:
                 # Fall back to date-only parse
                 try:
-                    from datetime import date as _date, time as _time
+                    from datetime import date as _date
+                    from datetime import time as _time
 
                     parsed = _date.fromisoformat(since)
                     cutoff = datetime.combine(parsed, _time.min)
                 except ValueError:
                     logger.warning("Invalid 'since' value: %s", since)
         results = store.list_recent_work(
-            since=cutoff, agent=agent, include_private=False
+            since=cutoff,
+            agent=agent,
+            include_private=include_private,
+            access_level=access_level,
         )
         return {
             "since": since,
             "agent": agent,
+            "access_level": access_level,
+            "include_private": include_private,
             "sessions": [s.to_dict() for s in results],
         }
 
     @mcp.tool()
-    def find_entity(name: str, include_private: bool = False) -> dict:
+    def find_entity(
+        name: str,
+        access_level: str = "public",
+        include_private: bool = False,
+    ) -> dict:
         """
         Find an entity by name across all agents.
 
@@ -190,16 +217,23 @@ def create_l6_server(store: L6Store, name: str = "continuo-l6") -> Any:
         unredacted output must pass ``True`` explicitly -- this is a second
         line of defense on top of per-manifest visibility policy.
         """
-        matches = store.find_entity(name, include_private=include_private)
+        matches = store.find_entity(
+            name,
+            include_private=include_private,
+            access_level=access_level,
+        )
         return {
             "name": name,
+            "access_level": access_level,
             "include_private": include_private,
             "matches": [m.to_dict() for m in matches],
         }
 
     @mcp.tool()
     def get_cross_agent_summary(
-        project: str, include_private: bool = False
+        project: str,
+        access_level: str = "public",
+        include_private: bool = False,
     ) -> dict:
         """
         Aggregate everything the federation knows about a project.
@@ -208,7 +242,9 @@ def create_l6_server(store: L6Store, name: str = "continuo-l6") -> Any:
         ``project_focus`` references it, and entity matches.
         """
         summary = store.get_cross_agent_summary(
-            project, include_private=include_private
+            project,
+            include_private=include_private,
+            access_level=access_level,
         )
         return summary.to_dict()
 
