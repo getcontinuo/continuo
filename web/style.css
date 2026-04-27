@@ -1,0 +1,200 @@
+/* Continuo landing page -- 2026-04-27
+ *
+ * Aesthetic choices:
+ *  - Plain HTML+CSS, no JavaScript, no web-font fetch (system font stack).
+ *  - Single accent color (deep navy #1f3a52).
+ *  - Single column, max-width 700px, centered.
+ *  - Long-form prose-driven; no marketing-page flourish.
+ *  - Reads cleanly on phone, tablet, desktop without media queries:
+ *    the 700px cap + relative units handle reflow naturally.
+ */
+
+:root {
+  --bg: #fafaf7;
+  --ink: #1a1a1a;
+  --muted: #555;
+  --accent: #1f3a52;
+  --rule: #d8d4c8;
+  --code-bg: #f1eee5;
+  --max-col: 42rem;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+main {
+  max-width: var(--max-col);
+  margin: 0 auto;
+  padding: 4rem 1.5rem 6rem;
+}
+
+/* Hero */
+
+.hero {
+  margin-bottom: 3rem;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 2rem;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin: 0 0 0.75rem 0;
+}
+
+h1 {
+  font-size: 3.2rem;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  color: var(--accent);
+}
+
+.tagline {
+  font-size: 1.15rem;
+  color: var(--muted);
+  margin: 0;
+  font-style: italic;
+}
+
+/* Sections */
+
+section {
+  margin-top: 3rem;
+}
+
+h2 {
+  font-size: 1.4rem;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  color: var(--accent);
+}
+
+p {
+  margin: 0 0 1rem 0;
+}
+
+p.note {
+  color: var(--muted);
+  font-size: 0.95rem;
+  border-left: 3px solid var(--rule);
+  padding-left: 1rem;
+  margin-top: 1.25rem;
+}
+
+ul {
+  margin: 0 0 1rem 0;
+  padding-left: 1.5rem;
+}
+
+li {
+  margin-bottom: 0.5rem;
+}
+
+strong { color: var(--ink); }
+em { font-style: italic; }
+code {
+  background: var(--code-bg);
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.9em;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+a:hover { text-decoration-thickness: 2px; }
+
+/* Diagrams */
+
+pre.diagram {
+  background: var(--code-bg);
+  padding: 1rem 1.25rem;
+  border-radius: 4px;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  overflow-x: auto;
+  margin: 1rem 0;
+  color: var(--ink);
+  border-left: 3px solid var(--accent);
+}
+
+/* Comparison table */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0 1.5rem;
+  font-size: 0.93rem;
+}
+
+thead th {
+  text-align: left;
+  border-bottom: 2px solid var(--accent);
+  padding: 0.6rem 0.75rem;
+  font-weight: 600;
+}
+
+tbody td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+
+tbody tr:last-child td {
+  background: var(--code-bg);
+  border-bottom: none;
+}
+
+/* Status section links */
+
+p.links {
+  font-size: 0.95rem;
+  margin-top: 1rem;
+}
+
+/* Footer */
+
+footer {
+  margin-top: 5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+footer p { margin-bottom: 0.5rem; }
+
+footer p.meta {
+  margin-top: 1rem;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+}
+
+/* Smaller screens -- table needs to stay readable */
+
+@media (max-width: 600px) {
+  main { padding: 2.5rem 1rem 4rem; }
+  h1 { font-size: 2.4rem; }
+  table { font-size: 0.85rem; }
+  thead th, tbody td { padding: 0.5rem 0.4rem; }
+}

@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Continuo &mdash; recognition-first memory for AI agents</title>
+  <meta name="description" content="Continuo is the first AI memory framework that treats runtime interaction timing as a first-class problem. Recognition first, hydration second, archive descent third.">
+  <meta name="theme-color" content="#1f3a52">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Continuo &mdash; recognition-first memory for AI agents">
+  <meta property="og:description" content="Every agent-memory framework optimizes for retrieval. Continuo is the first that optimizes for runtime timing.">
+  <meta property="og:url" content="https://continuo.cloud">
+  <meta property="og:site_name" content="Continuo">
+
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main>
+    <header class="hero">
+      <p class="eyebrow">A memory framework for AI agents</p>
+      <h1>Continuo</h1>
+      <p class="tagline">Recognition first. Hydration second. Archive descent third.</p>
+    </header>
+
+    <section>
+      <h2>The thesis in one paragraph</h2>
+      <p>
+        Every memory framework for AI agents &mdash; Mem0, Zep, Letta, Cognee, the
+        academic literature &mdash; optimizes for the same problem:
+        <em>better retrieval.</em> Persisting facts. Retrieving the right ones.
+        Structuring them as graphs, embeddings, hybrid stores. Continuo is the first
+        to optimize for a different problem: the moment-by-moment shape of the
+        response. The <em>felt experience</em> of memory at conversation rhythm. The
+        difference between &ldquo;the AI sounds like it knows me&rdquo; and &ldquo;the
+        AI sounds like a database that talks.&rdquo;
+      </p>
+    </section>
+
+    <section>
+      <h2>The gap nobody else is filling</h2>
+      <p>
+        What the industry calls &ldquo;natural language interaction&rdquo; with AI is
+        not natural. It is <strong>call-and-repeat</strong>:
+      </p>
+      <pre class="diagram">
+human: speaks.       human: speaks again.
+   |                    |
+   v                    v
+(silence, retrieval, search...)
+   |                    |
+   v                    v
+ai: replies.         ai: replies.</pre>
+      <p>
+        Real human language is <strong>concurrent</strong>. While one person speaks,
+        the other is already recognizing names, pulling memories, formulating a
+        response, listening for what&rsquo;s still being said. Recognition fires
+        first &mdash; before the details consciously arrive. Hydration runs in
+        parallel. Archive descent is deliberate, only when a conversation demands
+        it.
+      </p>
+      <p>
+        A retrieve-then-respond architecture forces all three steps into a serial
+        pipeline. Recognition can&rsquo;t happen until retrieval finishes. That
+        serial pipeline is what makes today&rsquo;s memory-enabled agents still
+        feel like databases that talk. Continuo&rsquo;s job is to put the steps
+        back in the right time-shape.
+      </p>
+    </section>
+
+    <section>
+      <h2>The OMNIvour test</h2>
+      <p>
+        On 2026-04-19 we wired a Codex session into a fully-populated Continuo
+        federation and asked: <em>&ldquo;What do you know about OMNIvour?&rdquo;</em>
+        The data layer worked perfectly. Codex correctly retrieved the project
+        summary, milestones, recent activity. But the <em>shape</em> of the response
+        was wrong: search first, summarize notes, paragraph back. A mind would have
+        said &ldquo;Oh &mdash; OMNIvour, the file converter project&rdquo; in the
+        first 200ms and hydrated the rest while talking.
+      </p>
+      <p>
+        That gap &mdash; data right, behavior wrong &mdash; is the product. We logged
+        it as a real product finding rather than user preference noise, and built
+        Continuo&rsquo;s tiered runtime to address it directly. The first concrete
+        implementation, <code>core/recognition_runtime.py</code>, ships now.
+      </p>
+    </section>
+
+    <section>
+      <h2>How Continuo differs</h2>
+      <table>
+        <thead>
+          <tr><th>Framework</th><th>What it optimizes</th><th>What it leaves open</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Mem0</td><td>3-tier scope, hybrid store, compliance</td><td>Runtime interaction shape</td></tr>
+          <tr><td>Zep (Graphiti)</td><td>Temporal validity windows, graph correctness</td><td>Runtime interaction shape</td></tr>
+          <tr><td>Letta</td><td>Editable memory blocks, stateful runtime</td><td>Runtime interaction shape</td></tr>
+          <tr><td>Cognee</td><td>Doc &rarr; KG construction</td><td>Runtime interaction shape</td></tr>
+          <tr><td>Memora (Microsoft, 2026)</td><td>Abstraction + cue-anchor representation</td><td>Runtime interaction shape</td></tr>
+          <tr><td><strong>Continuo</strong></td><td><strong>Runtime interaction shape: recognition &rarr; hydration &rarr; archive descent</strong></td><td>Less mature on representation, no compliance posture, no managed cloud &mdash; by choice</td></tr>
+        </tbody>
+      </table>
+      <p class="note">
+        Continuo isn&rsquo;t competing with these tools. It complements them.
+        A Continuo timing layer can sit on top of Mem0&rsquo;s store, Zep&rsquo;s
+        temporal graph, or Letta&rsquo;s memory blocks and make any of them feel
+        more like a mind.
+      </p>
+    </section>
+
+    <section>
+      <h2>How we&rsquo;d know we&rsquo;re wrong</h2>
+      <p>
+        The thesis is falsifiable. Three concrete failure conditions:
+      </p>
+      <ul>
+        <li>
+          <strong>The runtime ships and the agent still feels like lookup.</strong>
+          If Continuo-equipped agents fail the recognition-first feel test
+          (target: 8/10 subjective on a 5-session run), the architecture is
+          wrong &mdash; not just the implementation.
+        </li>
+        <li>
+          <strong>A competitor reaches the same behavior with a different
+          architecture.</strong> If someone ships recognition-first runtime
+          without an L0/L1 timing-orchestrated split, we adopt their approach
+          and document the loss.
+        </li>
+        <li>
+          <strong>Users can&rsquo;t tell the difference.</strong> If rigorous
+          blind testing shows people genuinely cannot distinguish a
+          recognition-first agent from a retrieve-then-respond agent at
+          comparable retrieval quality, the entire wedge collapses.
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Status</h2>
+      <p>
+        Pre-alpha. <strong>v0.0.7</strong>, MIT-licensed, public on GitHub.
+        244 tests passing across orchestrator, adapters, federation server,
+        and recognition runtime. Two shipping adapters (Claude Code, Codex),
+        one native publisher (Clyde). The recognition-first runtime exists
+        as a Python module today; wiring it into a live agent&rsquo;s response
+        loop is the next-cycle empirical test.
+      </p>
+      <p class="links">
+        <a href="https://github.com/getcontinuo/continuo">GitHub</a>
+        &middot;
+        <a href="https://github.com/getcontinuo/continuo/blob/main/spec/POSITIONING.md">Positioning</a>
+        &middot;
+        <a href="https://github.com/getcontinuo/continuo/blob/main/spec/THESIS.md">Thesis</a>
+        &middot;
+        <a href="https://github.com/getcontinuo/continuo/blob/main/spec/RELATED_WORK.md">Related work</a>
+        &middot;
+        <a href="https://github.com/getcontinuo/continuo/blob/main/spec/FINDINGS_JOURNAL.md">Findings journal</a>
+      </p>
+    </section>
+
+    <footer>
+      <p>
+        Continuo is built in public by <a href="https://github.com/RADLABtech">RADLAB LLC</a>
+        and the broader open-source community. Designed with Ry Davis. Co-authored
+        with Claude (Anthropic) and Codex (OpenAI). Contributors welcome
+        &mdash; especially adapters for new agents and integrations into
+        live response loops.
+      </p>
+      <p class="meta">MIT licensed. No tracking. No JavaScript. No web fonts. Just text.</p>
+    </footer>
+  </main>
+</body>
+</html>
