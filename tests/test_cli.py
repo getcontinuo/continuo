@@ -319,3 +319,151 @@ def test_cli_claude_code_export_includes_role_narrative(tmp_path, monkeypatch):
     manifest = yaml.safe_load(out_path.read_text(encoding="utf-8"))
     role_narrative = manifest["agent"].get("role_narrative", "")
     assert "manager" in role_narrative.lower()
+
+
+# ---- codex eval --recognition (Stream C harness) ----------------------------
+
+
+def test_cli_codex_eval_recognition_flag_attaches_recognition_section(tmp_path):
+    """Passing --recognition adds a 'recognition' key to the report."""
+    report_path = tmp_path / "report.yaml"
+    exit_code = main(
+        [
+            "codex",
+            "eval",
+            "--fixtures",
+            "--recognition",
+            "--report-out",
+            str(report_path),
+        ]
+    )
+    assert exit_code == 0
+    report = yaml.safe_load(report_path.read_text(encoding="utf-8"))
+    assert "recognition" in report
+
+
+def test_cli_codex_eval_recognition_report_shape(tmp_path):
+    """The recognition section has the expected aggregate + per-prompt keys."""
+    report_path = tmp_path / "report.yaml"
+    exit_code = main(
+        [
+            "codex",
+            "eval",
+            "--fixtures",
+            "--recognition",
+            "--report-out",
+            str(report_path),
+        ]
+    )
+    assert exit_code == 0
+    rec = yaml.safe_load(report_path.read_text(encoding="utf-8"))["recognition"]
+
+    # Aggregate keys
+    for k in (
+        "prompts_tested",
+        "recognition_hits",
+        "recognition_hit_rate",
+        "avg_recognition_latency_us",
+        "avg_hydration_latency_ms",
+        "results",
+    ):
+        assert k in rec, f"missing aggregate key: {k}"
+
+    # Per-prompt keys
+    assert isinstance(rec["results"], list) and rec["results"]
+    sample = rec["results"][0]
+    for k in (
+        "prompt",
+        "recognition",
+        "matched_entities",
+        "recognition_latency_us",
+        "hydration_latency_ms",
+        "hydration_chars",
+    ):
+        assert k in sample, f"missing per-prompt key: {k}"
+
+
+def test_cli_codex_eval_recognition_fixture_produces_at_least_one_hit(tmp_path):
+    """Against the codex fixtures (which include Coolculator), at least one
+    canonical prompt should produce a non-empty recognition string."""
+    report_path = tmp_path / "report.yaml"
+    exit_code = main(
+        [
+            "codex",
+            "eval",
+            "--fixtures",
+            "--recognition",
+            "--report-out",
+            str(report_path),
+        ]
+    )
+    assert exit_code == 0
+    rec = yaml.safe_load(report_path.read_text(encoding="utf-8"))["recognition"]
+    assert rec["recognition_hits"] >= 1
+    assert rec["recognition_hit_rate"] > 0.0
+
+
+def test_cli_codex_eval_recognition_negative_control_no_match(tmp_path):
+    """The 'What's the weather like?' canonical prompt must produce no match
+    against the fixtures -- guards against over-eager substring matching."""
+    report_path = tmp_path / "report.yaml"
+    exit_code = main(
+        [
+            "codex",
+            "eval",
+            "--fixtures",
+            "--recognition",
+            "--report-out",
+            str(report_path),
+        ]
+    )
+    assert exit_code == 0
+    rec = yaml.safe_load(report_path.read_text(encoding="utf-8"))["recognition"]
+    weather_results = [
+        r for r in rec["results"] if "weather" in r["prompt"].lower()
+    ]
+    assert weather_results, "negative control prompt missing from results"
+    weather = weather_results[0]
+    assert weather["recognition"] == ""
+    assert weather["matched_entities"] == []
+
+
+def test_cli_codex_eval_recognition_latency_below_template_budget(tmp_path):
+    """Template-based recognition should be sub-millisecond. Sanity-check
+    the design claim that recognition is instant: < 1000us avg."""
+    report_path = tmp_path / "report.yaml"
+    exit_code = main(
+        [
+            "codex",
+            "eval",
+            "--fixtures",
+            "--recognition",
+            "--report-out",
+            str(report_path),
+        ]
+    )
+    assert exit_code == 0
+    rec = yaml.safe_load(report_path.read_text(encoding="utf-8"))["recognition"]
+    assert rec["avg_recognition_latency_us"] < 1000.0, (
+        f"recognition avg latency {rec['avg_recognition_latency_us']}us "
+        "is above the 1ms (1000us) template-based budget"
+    )
+
+
+def test_cli_codex_eval_without_recognition_flag_omits_recognition_section(
+    tmp_path,
+):
+    """Existing eval behavior must be unchanged when --recognition is absent."""
+    report_path = tmp_path / "report.yaml"
+    exit_code = main(
+        [
+            "codex",
+            "eval",
+            "--fixtures",
+            "--report-out",
+            str(report_path),
+        ]
+    )
+    assert exit_code == 0
+    report = yaml.safe_load(report_path.read_text(encoding="utf-8"))
+    assert "recognition" not in report

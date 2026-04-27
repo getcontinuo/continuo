@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import sys
 import tempfile
+import time as _time
 from collections import Counter
 from datetime import date, datetime, time
 from pathlib import Path
@@ -18,6 +20,7 @@ from adapters.codex import CodexAdapter
 from core.codex_context import filter_manifest_for_access, write_codex_context_artifacts
 from core.codex_fixtures import create_sample_codex_sources
 from core.l5_io import write_l5_dict
+from core.recognition_runtime import recognition_first
 
 
 def _default_claude_code_l5_path() -> Path:
@@ -111,6 +114,92 @@ def _source_coverage(adapter: CodexAdapter) -> dict[str, Any]:
     }
 
 
+CANONICAL_RECOGNITION_PROMPTS = [
+    "Tell me about Coolculator",
+    "What is Fastify?",
+    "Anything new on Mac handoff?",
+    "Remind me what the rollout was about",
+    "What's the weather like?",  # negative control -- should not match
+]
+"""Canonical prompts for the recognition harness.
+
+Mixed by design: the first four are fixture-friendly (the bundled codex
+fixtures include Coolculator + Fastify entities, plus 'Mac handoff' as a
+known keyword) so the test suite gets deterministic positive hits. The
+fifth is a negative control that should never match -- it guards against
+over-eager substring matching in detect_entities.
+
+When run against live data (`--live`), the positive hits depend on what's
+actually in the user's manifest. The first four prompts work as-is on a
+typical developer machine (Coolculator + Fastify are common topic names
+in shipping code) but a more representative live evaluation would replace
+them with prompts based on the user's own recent threads."""
+
+
+def _recognition_eval(
+    manifest: Any, prompts: list[str] = CANONICAL_RECOGNITION_PROMPTS
+) -> dict[str, Any]:
+    """
+    Run :func:`recognition_first` against a list of prompts and return an
+    aggregated report.
+
+    Reports per-prompt: the recognition string, matched entity names,
+    recognition latency (microseconds), hydration latency (milliseconds).
+    Reports aggregate: hit rate, average latencies. Hydration runs through
+    asyncio.run so this helper can be called from a synchronous handler.
+    """
+
+    async def _run_one(prompt: str) -> dict[str, Any]:
+        t0 = _time.perf_counter()
+        result = recognition_first(prompt, manifest)
+        recognition_us = (_time.perf_counter() - t0) * 1_000_000
+
+        hydration_ms = 0.0
+        hydration_chars = 0
+        if result.hydration is not None:
+            t1 = _time.perf_counter()
+            try:
+                hydration = await result.hydration
+            except Exception:  # noqa: BLE001 -- harness must not crash
+                hydration = ""
+            hydration_ms = (_time.perf_counter() - t1) * 1_000
+            hydration_chars = len(hydration)
+
+        return {
+            "prompt": prompt,
+            "recognition": result.recognition,
+            "matched_entities": [
+                str(e.get("name") or "") for e in result.matched_entities
+            ],
+            "recognition_latency_us": round(recognition_us, 1),
+            "hydration_latency_ms": round(hydration_ms, 1),
+            "hydration_chars": hydration_chars,
+        }
+
+    async def _run_all() -> list[dict[str, Any]]:
+        return [await _run_one(p) for p in prompts]
+
+    results = asyncio.run(_run_all())
+
+    n = len(results)
+    hits = sum(1 for r in results if r["recognition"])
+    avg_recog_us = (
+        sum(r["recognition_latency_us"] for r in results) / n if n else 0.0
+    )
+    avg_hyd_ms = (
+        sum(r["hydration_latency_ms"] for r in results) / n if n else 0.0
+    )
+
+    return {
+        "prompts_tested": n,
+        "recognition_hits": hits,
+        "recognition_hit_rate": round(hits / n, 2) if n else 0.0,
+        "avg_recognition_latency_us": round(avg_recog_us, 1),
+        "avg_hydration_latency_ms": round(avg_hyd_ms, 1),
+        "results": results,
+    }
+
+
 def _handle_codex_eval(args: argparse.Namespace) -> int:
     adapter = _fixture_adapter() if args.fixtures else _build_adapter(args)
     manifest = _manifest_for_access(
@@ -156,6 +245,15 @@ def _handle_codex_eval(args: argparse.Namespace) -> int:
             "preferences": preference_hits,
         },
     }
+
+    # --recognition flag: also run recognition_runtime against canonical
+    # prompts and attach a behavior-layer eval to the report. This is the
+    # measurable counterpart to the data-layer counts above; together they
+    # let us track both `does the manifest contain the right entities?`
+    # and `does recognition fire on them in microseconds without retrieval?`
+    if getattr(args, "recognition", False):
+        report["recognition"] = _recognition_eval(manifest)
+
     _write_yaml_if_requested(report, args.report_out)
     _print_yaml(report)
     return 0
@@ -275,6 +373,15 @@ def _build_parser() -> argparse.ArgumentParser:
     eval_cmd.add_argument("--report-out")
     eval_cmd.add_argument("--codex-home", help=argparse.SUPPRESS)
     eval_cmd.add_argument("--codex-brain", help=argparse.SUPPRESS)
+    eval_cmd.add_argument(
+        "--recognition",
+        action="store_true",
+        help=(
+            "Also exercise core.recognition_runtime against canonical prompts "
+            "and attach a behavior-layer report (recognition latency, "
+            "hydration latency, hit rate)."
+        ),
+    )
     eval_cmd.set_defaults(func=_handle_codex_eval)
 
     # ---- claude-code subcommands --------------------------------------------
