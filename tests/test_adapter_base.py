@@ -174,6 +174,49 @@ def test_l5_to_dict_omits_role_narrative_when_none():
     assert "role_narrative" not in d["agent"]
 
 
+def test_entity_temporal_validity_defaults():
+    """valid_from / valid_to default to None and survive round-trip."""
+    e = Entity(name="X")
+    assert e.valid_from is None
+    assert e.valid_to is None
+
+
+def test_entity_temporal_validity_round_trip():
+    """Setting valid_from/valid_to is preserved on the dataclass."""
+    e = Entity(name="Cyndy", valid_from="2026-03-01", valid_to="2026-04-14")
+    assert e.valid_from == "2026-03-01"
+    assert e.valid_to == "2026-04-14"
+
+
+def test_l5_to_dict_emits_valid_to_when_set():
+    """An entity with valid_to surfaces it under the entity dict."""
+    manifest = L5Manifest(
+        spec_version="0.1",
+        agent=AgentInfo(id="x", type="code-assistant"),
+        last_updated="2026-04-27T12:00:00+00:00",
+        known_entities=[
+            Entity(name="Cyndy", valid_from="2026-03-01", valid_to="2026-04-14")
+        ],
+    )
+    d = manifest.to_dict()
+    assert d["known_entities"][0]["valid_from"] == "2026-03-01"
+    assert d["known_entities"][0]["valid_to"] == "2026-04-14"
+
+
+def test_l5_to_dict_omits_validity_when_unset():
+    """None values for valid_from/valid_to are dropped from the serialized dict."""
+    manifest = L5Manifest(
+        spec_version="0.1",
+        agent=AgentInfo(id="x", type="code-assistant"),
+        last_updated="2026-04-27T12:00:00+00:00",
+        known_entities=[Entity(name="ActiveProject")],
+    )
+    d = manifest.to_dict()
+    entry = d["known_entities"][0]
+    assert "valid_from" not in entry
+    assert "valid_to" not in entry
+
+
 def test_l5_to_dict_includes_populated_entities():
     manifest = L5Manifest(
         spec_version="0.1",

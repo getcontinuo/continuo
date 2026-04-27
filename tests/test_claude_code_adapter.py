@@ -294,6 +294,67 @@ def test_parse_project_overview_extracts_archived_status(tmp_path):
     assert "archived" in entity.tags
 
 
+def test_parse_project_overview_archived_sets_valid_to_from_status_date(tmp_path):
+    """Archived entity with date in status section: valid_to picks up that date."""
+    proj_dir = tmp_path / "CYNDY"
+    proj_dir.mkdir()
+    overview = proj_dir / "OVERVIEW.md"
+    overview.write_text(
+        "# Cyndy\n\n## Status: Archived (2026-04-14)\n\nBuild preserved.\n",
+        encoding="utf-8",
+    )
+    entity = _parse_project_overview(overview)
+    assert entity is not None
+    assert entity.valid_to == "2026-04-14"
+
+
+def test_parse_project_overview_canceled_picks_up_date(tmp_path):
+    """Canceled entity: same valid_to extraction, normalized spelling."""
+    proj_dir = tmp_path / "CRAMER"
+    proj_dir.mkdir()
+    overview = proj_dir / "OVERVIEW.md"
+    overview.write_text(
+        "# Cramer\n\n## Status\n\nCanceled 2026-04-14 -- never built.\n",
+        encoding="utf-8",
+    )
+    entity = _parse_project_overview(overview)
+    assert entity is not None
+    assert "canceled" in entity.tags
+    assert entity.valid_to == "2026-04-14"
+
+
+def test_parse_project_overview_archived_without_date_falls_back_to_mtime(tmp_path):
+    """Archived entity with no date in status section falls back to file mtime."""
+    proj_dir = tmp_path / "OLD"
+    proj_dir.mkdir()
+    overview = proj_dir / "OVERVIEW.md"
+    overview.write_text(
+        "# Old\n\n## Status\n\nArchived -- ancient project.\n",
+        encoding="utf-8",
+    )
+    entity = _parse_project_overview(overview)
+    assert entity is not None
+    assert entity.valid_to is not None
+    # mtime fallback => valid ISO date
+    from datetime import date as _date
+
+    _date.fromisoformat(entity.valid_to)  # raises if not ISO date
+
+
+def test_parse_project_overview_active_entity_has_no_valid_to(tmp_path):
+    """Active (non-archived/canceled) entity should leave valid_to as None."""
+    proj_dir = tmp_path / "ACTIVE"
+    proj_dir.mkdir()
+    overview = proj_dir / "OVERVIEW.md"
+    overview.write_text(
+        "# Active\n\n## Status\n\nActive and shipping.\n",
+        encoding="utf-8",
+    )
+    entity = _parse_project_overview(overview)
+    assert entity is not None
+    assert entity.valid_to is None
+
+
 # -- Parser: LOG ---------------------------------------------------------------
 
 

@@ -184,6 +184,16 @@
           "type": "string",
           "format": "date"
         },
+        "valid_from": {
+          "description": "ISO 8601 date this entity became active in the agent's worldview. When omitted, the entity has either always been valid or its start date is unknown. L6 queries can filter on this to answer 'what was active in Q1 2026?' style questions. Inspired by Zep's Graphiti temporal validity model.",
+          "type": "string",
+          "format": "date"
+        },
+        "valid_to": {
+          "description": "ISO 8601 date this entity stopped being active. Adapters typically populate this when an entity is tagged 'archived' or 'canceled'. Absent (or null) means the entity is still active as of last_updated. Federation queries that filter by current time treat missing valid_to as 'still valid'.",
+          "type": "string",
+          "format": "date"
+        },
         "tags": {
           "description": "Free-text tags. Used for visibility_policy.private_tags/team_tags matching and for filtering in L6 queries.",
           "type": "array",

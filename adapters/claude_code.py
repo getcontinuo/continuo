@@ -249,6 +249,29 @@ def _extract_status_tag(body: str) -> list[str]:
     return list(dict.fromkeys(tags))
 
 
+_END_OF_LIFE_TAGS = frozenset({"archived", "canceled"})
+
+# Match an ISO 8601 date inside parens or after status keywords:
+#   "Archived (2026-04-14)"  -> 2026-04-14
+#   "Canceled 2026-04-14"    -> 2026-04-14
+#   "Status: Archived 2026-04-14" -> 2026-04-14
+_STATUS_DATE_RE = re.compile(r"\b(\d{4}-\d{2}-\d{2})\b")
+
+
+def _extract_status_date(body: str) -> Optional[str]:
+    """
+    Pull the ISO 8601 date that appears inside the ``## Status`` section,
+    if any. Used for valid_to dating of archived / canceled entities.
+    Returns None if no date is found in the status region.
+    """
+    match = _STATUS_SECTION_RE.search(body)
+    if not match:
+        return None
+    region = body[match.start() : match.start() + 400]
+    date_match = _STATUS_DATE_RE.search(region)
+    return date_match.group(1) if date_match else None
+
+
 def _parse_project_overview(overview_path: Path) -> Optional[Entity]:
     """Parse a single PROJECTS/<NAME>/OVERVIEW.md into an Entity."""
     try:
@@ -259,11 +282,26 @@ def _parse_project_overview(overview_path: Path) -> Optional[Entity]:
     title = _extract_h1_title(body) or overview_path.parent.name
     summary = _extract_first_paragraph(body)
     tags = _extract_status_tag(body)
+
+    # Temporal validity: if the entity is end-of-life (archived/canceled),
+    # try to recover a valid_to date from the status section. Falls back to
+    # the file mtime when the status section doesn't carry an explicit date.
+    valid_to: Optional[str] = None
+    if any(t in _END_OF_LIFE_TAGS for t in tags):
+        valid_to = _extract_status_date(body)
+        if valid_to is None:
+            try:
+                mtime = overview_path.stat().st_mtime
+                valid_to = date.fromtimestamp(mtime).isoformat()
+            except OSError:
+                valid_to = None
+
     return Entity(
         name=title,
         type="project",
         summary=summary or None,
         tags=tags,
+        valid_to=valid_to,
     )
 
 

@@ -70,6 +70,11 @@ class Entity:
     last_touched: Optional[str] = None
     tags: list[str] = field(default_factory=list)
     visibility: Optional[Visibility] = None
+    # ISO 8601 dates (YYYY-MM-DD). When valid_to is None the entity is
+    # still considered active as of the manifest's last_updated time.
+    # Inspired by Zep Graphiti's temporal-validity model.
+    valid_from: Optional[str] = None
+    valid_to: Optional[str] = None
 
 
 @dataclass
