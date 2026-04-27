@@ -30,7 +30,7 @@ Named for *basso continuo* — the continuous bass accompaniment in Baroque musi
 }
 ```
 
-**Plus `spec/POSITIONING.md`** stakes the recognition-first thesis publicly, and **`spec/RELATED_WORK.md`** maps Continuo's vocabulary to the wider field (Mem0, Zep, Letta, Cognee, Memora, SCS, Intrinsic Memory Agents, G-Memory, H-MEM, MCP roadmap).
+**Plus `spec/POSITIONING.md`** stakes the recognition-first thesis publicly, and **`spec/RELATED_WORK.md`** maps Continuo's vocabulary to the wider field (Mem0, Zep, Letta, Cognee, Memora, SCS, Intrinsic Memory Agents, G-Memory, H-MEM, MCP roadmap). **And `core/recognition_runtime.py`** ships the first concrete implementation of the recognition-first runtime: synchronous template-based recognition string + concurrent L1 hydration awaitable, ≤3s timeout budget, never raises. This is the headline behavior the FINDINGS_JOURNAL flagged on 2026-04-19.
 
 **Not ready for production use.** Built in the open as a spec-and-reference-implementation for a convention we hope the ecosystem adopts.
 

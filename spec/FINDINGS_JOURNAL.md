@@ -240,3 +240,139 @@ retrieve and how naturally it behaves in the first moments of interaction.
   to recognition_runtime.py as the headline behavior fix.
 - Temporal validity windows is the next-smallest concrete edit if a warm-up
   is preferred.
+
+## 2026-04-27 - Plan Items 2/5/a/4 Shipped
+
+### Context
+- After yesterday's role_narrative work + landscape sweep, the plan
+  surfaced four concrete edits: temporal validity windows (#2),
+  RELATED_WORK.md (#5), auto-fire on session close (#a), and the
+  recognition-first runtime (#4). Today: ship them.
+
+### What landed
+
+#### #2 -- Temporal validity windows (Zep Graphiti-inspired)
+- Commit `4a26533`. Entity gains optional `valid_from` / `valid_to`
+  ISO 8601 date fields. Claude Code adapter populates `valid_to` for
+  archived/canceled entities, preferring an ISO date in the
+  `## Status` section over the file's mtime fallback.
+- Federation queries can now answer "what was active in Q1 2026?"
+  rather than just "what's in memory?". Cyndy's manifest now reads
+  `valid_to: 2026-04-14` -- truthful temporal context.
+- Tests +8 = 212 total.
+
+#### #5 -- RELATED_WORK.md
+- Commit `77d23ae`. Reference document mapping our L0-L6 vocabulary
+  to the academic / industry landscape. Per-framework adoption notes
+  (Mem0, Zep, Letta, Cognee, Supermemory, LinkedIn CMA). Per-paper
+  cross-references (Memora, the 2025-2026 survey, SCS, Intrinsic
+  Memory Agents, G-Memory, H-MEM). Companion to POSITIONING.md
+  (commit 17e2d9f) which stakes the claim; this document maps it.
+
+#### #a -- continuo claude-code export (SessionEnd hook target)
+- Commit `65b3ba5`. New CLI subcommand `continuo claude-code export`.
+  Designed for Claude Code SessionEnd hook use: silent on success,
+  never raises, exits 0 in all observable failure modes. Default
+  output path is `~/agent-library/agents/claude-code.l5.yaml`. Wire-
+  up in `~/.claude/settings.json`:
+
+  ```json
+  {
+    "hooks": {
+      "SessionEnd": [
+        { "command": "continuo claude-code export" }
+      ]
+    }
+  }
+  ```
+
+  Closes the operational loop: every Claude Code session close
+  updates the federation library automatically.
+- Tests +7 = 219 total.
+
+#### #4 -- Recognition-first runtime
+- Commit (this one). New module `core/recognition_runtime.py`
+  shipping the first concrete implementation of the recognition-first
+  behavior the FINDINGS_JOURNAL flagged on 2026-04-19.
+- Public API: `recognition_first(user_msg, manifest, l1_dir=...,
+  access_level=..., hydration_timeout=...)` -> `RecognitionResult`
+  with `.recognition` (sync, immediate template-based string),
+  `.matched_entities` (the entities that triggered recognition),
+  and `.hydration` (an awaitable L1-hydration coroutine that runs
+  in parallel with the caller's other work, with the documented 3s
+  timeout budget).
+- Recognition strings are deliberately template-based, NOT
+  LLM-generated. Reasons: zero latency by definition, no model
+  dependency, deterministic / testable, and honest to the
+  architecture (L0 IS recognition; if recognition needed an LLM
+  call, the layer numbering would be wrong). LLM-based generation
+  can be swapped in at `build_recognition_string` later without
+  changing the public API.
+- Hydration runs `asyncio.gather` over per-entity L1 file reads in
+  a thread pool, with `asyncio.wait_for` timeout. NEVER raises:
+  timeouts and read errors return empty string so the worst case
+  degrades to L0-only response.
+- Visibility filter applied at dispatch via
+  `filter_manifest_for_access` -- private entities cannot surface
+  in recognition strings even if their name appears in the user
+  message.
+- Tests +25 = 244 total. Coverage: detect_entities (case-insensitive,
+  alias, multi-match, no-match, defensive non-dict), recognition
+  string templates (0/1/2/3+ matches, with/without type, archived
+  with valid_to / via tag), hydrate_l1 (loads, missing l1_dir,
+  case-insensitive filename, name-less entity), recognition_first
+  full dispatch (sync recognition, no-match path, parallel
+  hydration, timeout returns "", visibility filter), constants.
+
+### Decisions
+- Decision: template-based recognition string for v0.1.0. Rationale
+  above. Impact: shipping the runtime today instead of debating
+  which model to call. LLM-based generation is a future swap, not
+  a launch blocker.
+- Decision: hydration timeout default = 3.0 seconds. Rationale:
+  matches the documented thesis budget (recognition fires in
+  100-200ms; hydration runs concurrent with model generation
+  which typically takes 2-3s; by the time the model finishes its
+  first response, hydration is ready for the second turn).
+- Decision: hydration NEVER raises out of `recognition_first`.
+  Rationale: thesis depends on the recognition path being uncrashable.
+  Caller should not need try/except around the awaitable.
+
+### Risks
+- The recognition string templates are simple. They will sound
+  formulaic to users who interact with the system frequently. The
+  remedy when this surfaces is the v0.2.x LLM-based generator
+  swap. Hold the deterministic version until we have user feedback
+  proving the formulaic feel is a problem worth fixing.
+- We have not yet integrated the recognition runtime into a real
+  agent's response loop. Codex's runtime path uses
+  `core/codex_context.py` which builds L0 + L1 artifacts statically.
+  Wiring `recognition_first` into Codex's response generation is a
+  next-cycle item.
+
+### Actions
+- Owner: Future cycle
+  Action: integrate `recognition_first` into Codex's runtime so
+  the 2026-04-19 OMNIvour test case actually exercises the new path.
+  Expected effect: response begins with "Oh -- OMNIvour, the project."
+  no retrieval pause; followed by hydrated detail when the L1
+  documents arrive.
+  Status: open -- the runtime exists, the wiring doesn't.
+- Owner: Future cycle
+  Action: build `continuo codex eval --recognition` mode that scores
+  response *shape* + *latency*, not just entity correctness.
+  Status: open.
+- Owner: Future cycle
+  Action: swap `build_recognition_string` for an LLM-based variant
+  ONLY after observing whether the deterministic version feels
+  formulaic in real use.
+  Status: deferred -- evidence-driven, not speculative.
+
+### Today's totals
+- Continuo: 5 commits (POSITIONING, temporal validity, RELATED_WORK,
+  auto-fire, recognition runtime)
+- Tests: 219 -> 244 passing (+25 in recognition runtime)
+- Plan items closed: 2, 5, a, 4 (the four that came out of the
+  2026-04-22 landscape sweep)
+- Architecture: complete and wired in tests; integration into a
+  live agent's response loop is the next experimental step.
