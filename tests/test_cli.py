@@ -179,3 +179,143 @@ def test_cli_codex_eval_fixtures_writes_report(tmp_path, capsys):
     assert report["entity_counts"]["total"] >= 1
     assert report["context_generation"]["l0_generated"] is True
     assert "mode: fixtures" in stdout
+
+
+# ---- claude-code export (SessionEnd hook target) ----------------------------
+
+
+def _build_fake_claude_code_home(fake_home: Path) -> None:
+    """Set up a minimal ~/claude-brain/ tree the Claude Code adapter can parse."""
+    brain = fake_home / "claude-brain"
+    projects = brain / "PROJECTS" / "ILTT"
+    projects.mkdir(parents=True)
+    (brain / "CURRENT.md").write_text("# Current focus\n", encoding="utf-8")
+    (projects / "OVERVIEW.md").write_text(
+        "# ILTT -- if_lift then_that\n\nAI fitness automation.\n",
+        encoding="utf-8",
+    )
+    log_dir = brain / "LOG"
+    log_dir.mkdir()
+    (log_dir / "2026-04-27-pc.md").write_text(
+        "# Session Log -- 2026-04-27 (PC)\n\n## Headline\nShipped role_narrative.\n",
+        encoding="utf-8",
+    )
+
+
+def test_cli_claude_code_export_no_sources_silent_and_zero(tmp_path, monkeypatch, capsys):
+    """Hook contract: no sources -> exit 0, no stderr output by default."""
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, "home", lambda: fake_home)
+    monkeypatch.delenv("CLAUDE_BRAIN", raising=False)
+
+    exit_code = main(["claude-code", "export"])
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert captured.out == ""
+    assert captured.err == ""
+
+
+def test_cli_claude_code_export_no_sources_verbose_logs_to_stderr(
+    tmp_path, monkeypatch, capsys
+):
+    """--verbose surfaces 'no sources found' to stderr but still exits 0."""
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, "home", lambda: fake_home)
+    monkeypatch.delenv("CLAUDE_BRAIN", raising=False)
+
+    exit_code = main(["claude-code", "export", "--verbose"])
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert "no Claude Code memory sources" in captured.err
+
+
+def test_cli_claude_code_export_writes_to_default_path(tmp_path, monkeypatch):
+    """With sources, writes to ~/agent-library/agents/claude-code.l5.yaml."""
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, "home", lambda: fake_home)
+    monkeypatch.delenv("CLAUDE_BRAIN", raising=False)
+    _build_fake_claude_code_home(fake_home)
+
+    exit_code = main(["claude-code", "export"])
+
+    assert exit_code == 0
+    expected = fake_home / "agent-library" / "agents" / "claude-code.l5.yaml"
+    assert expected.is_file()
+    manifest = yaml.safe_load(expected.read_text(encoding="utf-8"))
+    assert manifest["agent"]["id"] == "claude-code"
+
+
+def test_cli_claude_code_export_out_override(tmp_path, monkeypatch):
+    """--out path takes precedence over default."""
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, "home", lambda: fake_home)
+    monkeypatch.delenv("CLAUDE_BRAIN", raising=False)
+    _build_fake_claude_code_home(fake_home)
+
+    out_path = tmp_path / "custom" / "claude-code.l5.yaml"
+    exit_code = main(["claude-code", "export", "--out", str(out_path)])
+
+    assert exit_code == 0
+    assert out_path.is_file()
+    # Default path should NOT exist
+    default_path = fake_home / "agent-library" / "agents" / "claude-code.l5.yaml"
+    assert not default_path.exists()
+
+
+def test_cli_claude_code_export_silent_on_success_by_default(
+    tmp_path, monkeypatch, capsys
+):
+    """Default behavior is silent (no stdout, no stderr) on successful export."""
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, "home", lambda: fake_home)
+    monkeypatch.delenv("CLAUDE_BRAIN", raising=False)
+    _build_fake_claude_code_home(fake_home)
+
+    exit_code = main(["claude-code", "export"])
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert captured.out == ""
+    assert captured.err == ""
+
+
+def test_cli_claude_code_export_print_dumps_manifest_to_stdout(
+    tmp_path, monkeypatch, capsys
+):
+    """--print emits the filtered manifest YAML to stdout."""
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, "home", lambda: fake_home)
+    monkeypatch.delenv("CLAUDE_BRAIN", raising=False)
+    _build_fake_claude_code_home(fake_home)
+
+    exit_code = main(["claude-code", "export", "--print"])
+    captured = capsys.readouterr()
+
+    assert exit_code == 0
+    assert "agent:" in captured.out
+    assert "claude-code" in captured.out
+
+
+def test_cli_claude_code_export_includes_role_narrative(tmp_path, monkeypatch):
+    """The exported manifest carries Claude Code's role_narrative."""
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    monkeypatch.setattr(Path, "home", lambda: fake_home)
+    monkeypatch.delenv("CLAUDE_BRAIN", raising=False)
+    _build_fake_claude_code_home(fake_home)
+
+    out_path = tmp_path / "out.yaml"
+    exit_code = main(["claude-code", "export", "--out", str(out_path)])
+
+    assert exit_code == 0
+    manifest = yaml.safe_load(out_path.read_text(encoding="utf-8"))
+    role_narrative = manifest["agent"].get("role_narrative", "")
+    assert "manager" in role_narrative.lower()

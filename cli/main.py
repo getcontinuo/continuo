@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import sys
 import tempfile
 from collections import Counter
 from datetime import date, datetime, time
@@ -11,9 +12,21 @@ from typing import Any
 
 import yaml
 
+from adapters.base import AdapterDiscoveryError
+from adapters.claude_code import ClaudeCodeAdapter
 from adapters.codex import CodexAdapter
 from core.codex_context import filter_manifest_for_access, write_codex_context_artifacts
 from core.codex_fixtures import create_sample_codex_sources
+from core.l5_io import write_l5_dict
+
+
+def _default_claude_code_l5_path() -> Path:
+    """Resolve ~/agent-library/agents/claude-code.l5.yaml at call time.
+
+    Computed at call time (not import time) so tests can monkeypatch
+    ``Path.home`` and have the resolution honor the override.
+    """
+    return Path.home() / "agent-library" / "agents" / "claude-code.l5.yaml"
 
 
 def _parse_since(value: str | None) -> datetime | None:
@@ -148,6 +161,74 @@ def _handle_codex_eval(args: argparse.Namespace) -> int:
     return 0
 
 
+def _handle_claude_code_export(args: argparse.Namespace) -> int:
+    """
+    Build a Claude Code L5 manifest and write it to ``~/agent-library/agents/
+    claude-code.l5.yaml`` (or ``--out`` if specified). Designed for use as a
+    SessionEnd hook in Claude Code:
+
+      Add to ~/.claude/settings.json:
+        "hooks": {
+          "SessionEnd": [
+            { "command": "continuo claude-code export" }
+          ]
+        }
+
+    Operates silently on success and **never raises** -- a session-end hook
+    that crashes is worse than a session-end hook that does nothing. Returns
+    0 in all observable failure modes; use --verbose to surface diagnostics
+    to stderr.
+    """
+    try:
+        adapter = ClaudeCodeAdapter()
+    except Exception as exc:  # noqa: BLE001 -- hook contract: never raises
+        if args.verbose:
+            print(
+                f"continuo claude-code export: adapter init failed: {exc}",
+                file=sys.stderr,
+            )
+        return 0
+
+    try:
+        manifest = adapter.export_l5(since=_parse_since(args.since))
+    except AdapterDiscoveryError as exc:
+        if args.verbose:
+            print(
+                f"continuo claude-code export: no Claude Code memory sources found ({exc}), skipping",
+                file=sys.stderr,
+            )
+        return 0
+    except Exception as exc:  # noqa: BLE001 -- hook contract
+        if args.verbose:
+            print(
+                f"continuo claude-code export: export failed: {exc}",
+                file=sys.stderr,
+            )
+        return 0
+
+    data = filter_manifest_for_access(manifest, access_level=args.access_level)
+
+    out_path = Path(args.out) if args.out else _default_claude_code_l5_path()
+    try:
+        write_l5_dict(data, out_path)
+    except Exception as exc:  # noqa: BLE001 -- hook contract
+        if args.verbose:
+            print(
+                f"continuo claude-code export: write to {out_path} failed: {exc}",
+                file=sys.stderr,
+            )
+        return 0
+
+    if getattr(args, "print_manifest", False):
+        _print_yaml(data)
+    elif args.verbose:
+        print(
+            f"continuo claude-code export: wrote {out_path}",
+            file=sys.stderr,
+        )
+    return 0
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="continuo",
@@ -195,6 +276,47 @@ def _build_parser() -> argparse.ArgumentParser:
     eval_cmd.add_argument("--codex-home", help=argparse.SUPPRESS)
     eval_cmd.add_argument("--codex-brain", help=argparse.SUPPRESS)
     eval_cmd.set_defaults(func=_handle_codex_eval)
+
+    # ---- claude-code subcommands --------------------------------------------
+    cc = subparsers.add_parser(
+        "claude-code", help="Claude Code-specific commands"
+    )
+    cc_subparsers = cc.add_subparsers(dest="cc_command")
+
+    cc_export_cmd = cc_subparsers.add_parser(
+        "export",
+        help=(
+            "Build a Claude Code L5 manifest and write it to ~/agent-library/. "
+            "Silent + never raises; designed for SessionEnd hook use."
+        ),
+    )
+    cc_export_cmd.add_argument(
+        "--since",
+        help="Filter sessions newer than this ISO 8601 date / datetime.",
+    )
+    cc_export_cmd.add_argument(
+        "--out",
+        help=(
+            "Output YAML path. Default: ~/agent-library/agents/claude-code.l5.yaml"
+        ),
+    )
+    cc_export_cmd.add_argument(
+        "--access-level",
+        choices=("public", "team", "private"),
+        default="team",
+    )
+    cc_export_cmd.add_argument(
+        "--print",
+        dest="print_manifest",
+        action="store_true",
+        help="Also print the filtered manifest to stdout (default: silent).",
+    )
+    cc_export_cmd.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Log progress + errors to stderr (default: silent).",
+    )
+    cc_export_cmd.set_defaults(func=_handle_claude_code_export)
 
     return parser
 
