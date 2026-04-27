@@ -142,6 +142,10 @@ def test_adapter_satisfies_protocol(isolated_home):
 def test_adapter_constants():
     assert codex_module.AGENT_ID == "codex"
     assert codex_module.AGENT_TYPE == "code-assistant"
+    # role_narrative differentiates Codex from sibling code-assistants
+    assert isinstance(codex_module.ROLE_NARRATIVE, str)
+    assert len(codex_module.ROLE_NARRATIVE) <= 500
+    assert "lead" in codex_module.ROLE_NARRATIVE.lower()
 
 
 # -- discover + health_check ---------------------------------------------------

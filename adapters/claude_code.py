@@ -51,6 +51,12 @@ logger = logging.getLogger(__name__)
 
 AGENT_ID = "claude-code"
 AGENT_TYPE = "code-assistant"
+ROLE_NARRATIVE = (
+    "Agentic manager and code-assistant. Coordinates the RADLAB agent fleet, "
+    "reviews PRs, and consults on architectural decisions. Capable of authoring "
+    "code but typically reviews + delegates to specialised code-assistants like "
+    "Codex for prime-code execution."
+)
 
 # Default visibility policy -- conservative, tuned for personal/work blend
 DEFAULT_POLICY = VisibilityPolicy(
@@ -601,6 +607,7 @@ class ClaudeCodeAdapter:
                 type=self.agent_type,
                 instance=socket.gethostname() or "unknown",
                 spec_version_compat=f">={SPEC_VERSION}",
+                role_narrative=ROLE_NARRATIVE,
             ),
             last_updated=datetime.now(timezone.utc).isoformat(),
             capabilities=capabilities,

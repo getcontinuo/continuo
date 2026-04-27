@@ -30,6 +30,11 @@ logger = logging.getLogger(__name__)
 
 AGENT_ID = "codex"
 AGENT_TYPE = "code-assistant"
+ROLE_NARRATIVE = (
+    "Lead code-assistant. Organizes project code and executes prime code. "
+    "Consults with Claude on solutions, problems, and issues via PR or the "
+    "Slack #agents channel."
+)
 
 DEFAULT_POLICY = VisibilityPolicy(
     default=Visibility.TEAM,
@@ -1035,6 +1040,7 @@ class CodexAdapter:
                 type=self.agent_type,
                 instance=socket.gethostname() or "unknown",
                 spec_version_compat=f">={SPEC_VERSION}",
+                role_narrative=ROLE_NARRATIVE,
             ),
             last_updated=datetime.now(timezone.utc).isoformat(),
             capabilities=capabilities,

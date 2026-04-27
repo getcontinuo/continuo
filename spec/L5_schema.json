@@ -49,6 +49,17 @@
           "description": "Version range of Continuo specs this manifest is compatible with. Uses npm-style semver ranges. If omitted, assumed equal to spec_version.",
           "type": "string",
           "examples": [">=0.1", "^0.1.0"]
+        },
+        "role_narrative": {
+          "description": "Free-text description of the agent's role within a fleet. Differentiates agents that share the same `type` slug (e.g. multiple code-assistants playing different roles like manager, lead author, debugger, throwaway). Used by L6 to answer 'who should I ask about X?' style queries.",
+          "type": "string",
+          "maxLength": 500,
+          "examples": [
+            "Agentic manager and code-assistant. Coordinates the agent fleet, reviews PRs, and consults on solutions.",
+            "Lead code-assistant. Organizes project code and executes prime code. Consults with Claude on solutions, problems, and issues via PR or Slack #agents channel.",
+            "Code-assistant invoked for debugging, issues, quick fixes, and short-task throwaway sessions.",
+            "General-purpose RADLAB assistant with deep project memory."
+          ]
         }
       }
     },

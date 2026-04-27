@@ -56,6 +56,7 @@ class AgentInfo:
     type: str
     instance: Optional[str] = None
     spec_version_compat: Optional[str] = None
+    role_narrative: Optional[str] = None
 
 
 @dataclass

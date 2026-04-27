@@ -109,6 +109,16 @@ def test_adapter_exposes_expected_constants():
     assert cc_module.AGENT_TYPE == "code-assistant"
     assert "credential" in cc_module.DEFAULT_POLICY.private_tags
     assert "financial" in cc_module.DEFAULT_POLICY.private_tags
+    # role_narrative differentiates Claude Code from sibling code-assistants
+    assert isinstance(cc_module.ROLE_NARRATIVE, str)
+    assert len(cc_module.ROLE_NARRATIVE) <= 500
+    assert "manager" in cc_module.ROLE_NARRATIVE.lower()
+
+
+def test_export_l5_populates_role_narrative(isolated_home):
+    isolated_home["create_brain"]()
+    manifest = ClaudeCodeAdapter().export_l5()
+    assert manifest.agent.role_narrative == cc_module.ROLE_NARRATIVE
 
 
 def test_discover_raises_when_no_sources(isolated_home):

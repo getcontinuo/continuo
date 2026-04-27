@@ -136,6 +136,44 @@ def test_l5_to_dict_strips_none_and_empty():
     assert "recent_sessions" not in d
 
 
+def test_agent_info_accepts_role_narrative():
+    """role_narrative is optional and defaults to None."""
+    a = AgentInfo(id="x", type="code-assistant")
+    assert a.role_narrative is None
+    b = AgentInfo(
+        id="x",
+        type="code-assistant",
+        role_narrative="Lead code-assistant. Executes prime code.",
+    )
+    assert b.role_narrative == "Lead code-assistant. Executes prime code."
+
+
+def test_l5_to_dict_emits_role_narrative_when_set():
+    """role_narrative survives serialization to dict and lands under agent.role_narrative."""
+    manifest = L5Manifest(
+        spec_version="0.1",
+        agent=AgentInfo(
+            id="claude-code",
+            type="code-assistant",
+            role_narrative="Agentic manager and code-assistant.",
+        ),
+        last_updated="2026-04-22T12:00:00+00:00",
+    )
+    d = manifest.to_dict()
+    assert d["agent"]["role_narrative"] == "Agentic manager and code-assistant."
+
+
+def test_l5_to_dict_omits_role_narrative_when_none():
+    """role_narrative is dropped from dict when not set (per to_dict's None-stripping rule)."""
+    manifest = L5Manifest(
+        spec_version="0.1",
+        agent=AgentInfo(id="x", type="code-assistant"),
+        last_updated="2026-04-22T12:00:00+00:00",
+    )
+    d = manifest.to_dict()
+    assert "role_narrative" not in d["agent"]
+
+
 def test_l5_to_dict_includes_populated_entities():
     manifest = L5Manifest(
         spec_version="0.1",
