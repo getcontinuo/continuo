@@ -147,3 +147,96 @@ retrieve and how naturally it behaves in the first moments of interaction.
   recognition first,
   hydration second,
   archive third.
+
+## 2026-04-22 - Role Narrative + Landscape Sweep
+
+### Context
+- Resumed Continuo work after a brief gap. Goal: review the project, sweep the
+  agent-memory field for new findings, and formulate a small adoption plan.
+- Picked the smallest plan item first: add `agent.role_narrative` to L5.
+
+### Landscape findings (2026-04-22 sweep)
+- Mature frameworks: Mem0 (3-tier scope, hybrid store, SOC 2), Zep (Graphiti,
+  temporal validity windows), Letta (memory blocks, stateful runtime), Cognee
+  (doc -> KG), Supermemory / SuperLocalMemory (local-first variants).
+- Notable academic work:
+  - Memora -- "primary abstractions + cue anchors" (Microsoft, Feb 2026,
+    hf.co/papers/2602.03315). Structurally close to our L0/L1 split, framed
+    as a representation problem rather than a runtime-timing problem.
+  - Memory in the Age of AI Agents -- canonical 2025-2026 survey
+    (hf.co/papers/2512.13564, 157 upvotes). Six memory types: token-level,
+    parametric, latent, factual, experiential, working.
+  - Enhancing MCP with Context-Aware Server Collaboration (arXiv 2601.11595)
+    -- formalizes "Shared Context Store (SCS)" -- functionally our L6.
+  - Intrinsic Memory Agents (hf.co/papers/2508.08997, Jan 2026) -- shows that
+    role-aligned memory blocks reduce role drift in heterogeneous multi-agent
+    systems. Directly inspired today's role_narrative feature.
+- MCP 2026 roadmap -- transport scalability, agent communication, governance,
+  enterprise readiness. SEP-1932 (DPoP) and SEP-1933 (Workload Identity
+  Federation) sponsored. Our L6 stays roadmap-aligned without active work.
+- No external product or paper found that frames the recognition-vs-retrieval
+  *runtime timing* problem the way our 2026-04-19 entry does. White space
+  remains.
+
+### Decisions
+- Decision: adopt role_narrative now, defer Memora-style abstraction/cue
+  formalism to a later cycle.
+  Rationale: role_narrative is one optional schema field with high
+  differentiation payoff. Memora alignment is bigger surface and would
+  require deeper read of the paper before commit.
+  Impact: shipping role_narrative today, leaving abstraction/cue work as
+  an open candidate for v0.1.x.
+- Decision: do not rebuild as a knowledge graph (Cognee / Zep direction).
+  Rationale: Continuo's wedge is timing, not representation richness.
+  Adding graph engine = scope blowup with no thesis payoff.
+- Decision: stay aligned with MCP 2026 roadmap on terminology + governance,
+  but do not preemptively implement DPoP / Workload Identity Federation.
+  Rationale: those are enterprise concerns; we are still pre-alpha.
+
+### Actions
+- Owner: Claude (today)
+  Action: ship `agent.role_narrative` schema + dataclass + populations in
+  Claude Code and Codex adapters + tests.
+  Status: complete (commit 798836f)
+- Owner: Claude (today)
+  Action: populate role_narrative in Clyde native publisher.
+  Status: next
+- Owner: Future cycle
+  Action: write spec/POSITIONING.md staking the recognition-first
+  framing publicly before anyone else does.
+  Status: open
+- Owner: Future cycle
+  Action: add Zep-style temporal validity windows (`valid_from` /
+  `valid_to`) to L5 Entity.
+  Status: open
+- Owner: Future cycle
+  Action: build the recognition-first runtime path
+  (`core/recognition_runtime.py`) that emits an immediate recognition
+  sentence while L1 hydrates in parallel.
+  Status: open -- highest leverage item, deferred so we can warm up with
+  smaller wins first.
+- Owner: Future cycle
+  Action: write spec/RELATED_WORK.md mapping our terms to Memora,
+  Memory in the Age of AI Agents, SCS, G-Memory, H-MEM.
+  Status: open
+
+### Working Answers
+- Role narratives differentiate within type slug: Claude Code = manager,
+  Codex = lead author, Cursor = debugger, Cline = throwaway, Clyde =
+  general-purpose. L6 query routing benefits immediately.
+- Schema field is optional and capped at 500 chars; backwards-compatible
+  with all existing manifests.
+
+### Risks
+- Recognition-first runtime work is still the headline gap. role_narrative
+  is useful but does not by itself fix the lookup-feel problem. Watch for
+  the trap of shipping many small wins while the central gap remains.
+- Memora's framing is close enough to ours that aligning vocabulary later
+  is cheap, but if a competing project picks up "abstraction + cue"
+  vocabulary first, we look downstream of them.
+
+### Next Session Bootstrap
+- Either ship POSITIONING.md to stake recognition-first framing, or jump
+  to recognition_runtime.py as the headline behavior fix.
+- Temporal validity windows is the next-smallest concrete edit if a warm-up
+  is preferred.
