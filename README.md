@@ -1,6 +1,6 @@
 # Continuo
 
-**Cross-agent memory federation for human-AI collaboration.**
+**[continuo.cloud](https://continuo.cloud)** · Cross-agent memory federation for human-AI collaboration.
 
 Current AI memory systems are **call-and-repeat** — discrete turns with nothing happening in between. Real human language is **concurrent** — listeners recognize, recall, and formulate *while* speakers are still speaking. Continuo is the engineering translation of that concurrent structure into AI systems.
 
