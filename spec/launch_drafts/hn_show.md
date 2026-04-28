@@ -52,10 +52,11 @@ The numbering encodes the *time budget* each layer fits inside. Recognition
 fires in microseconds. Hydration in tens-to-hundreds of milliseconds.
 Descent only when needed.
 
-Status: pre-alpha v0.0.7, MIT, 244 tests passing. Adapters shipped for
+Status: pre-alpha v0.0.7, MIT, 250 tests passing. Adapters shipped for
 Claude Code and Codex. Native publisher for a local AI swarm. Recognition-
-first runtime exists as a Python module; integrating it into a live
-agent's response loop is the open empirical test.
+first runtime exists as a Python module that fires in 24 microseconds
+average (measured by `continuo codex eval --recognition`); integrating
+it into a live agent's response loop is the open empirical test.
 
 I'm explicitly NOT competing with mem0, Zep (Graphiti), or Letta — those
 solve representation and retrieval well. Continuo is the timing layer that

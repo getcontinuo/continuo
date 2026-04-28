@@ -78,11 +78,12 @@ context, not for engagement-bait.
 
 > Pre-alpha v0.0.7, MIT, public:
 >
->   • L0-L6 stack working in tests (244/244)
+>   • L0-L6 stack working in tests (250/250)
 >   • Adapters for Claude Code + Codex
 >   • Native publisher for a local AI swarm
->   • Recognition-first runtime now ships as a Python module
+>   • Recognition-first runtime ships as a Python module
 >   • SessionEnd hook for auto-federation
+>   • `continuo codex eval --recognition` measures it (24µs avg)
 >
 > All free, all open, all on GitHub.
 
