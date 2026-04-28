@@ -25,22 +25,9 @@ workers_dev = true
 directory = "./web"
 not_found_handling = "single-page-application"
 
-# Custom domain binding -- COMMENTED OUT until IONOS DNS migration completes.
-#
-# Cloudflare requires continuo.cloud's DNS to land on Cloudflare nameservers
-# before it will bind the hostname to a worker. Today (2026-04-27) the
-# domain still resolves via IONOS (74.208.236.229) so the bind fails with
-# "Hostname 'continuo.cloud' already has externally managed DNS records".
-#
-# The unblock is on Ry's side and goes:
-#   1. Cloudflare dashboard -> Websites -> Add a site -> continuo.cloud
-#   2. Cloudflare scans the IONOS records, hands back Cloudflare nameservers
-#      (something like `xxx.ns.cloudflare.com` and `yyy.ns.cloudflare.com`)
-#   3. IONOS -> Domain settings -> change nameservers to those
-#   4. Wait for propagation (1-24 hrs; usually <1)
-#   5. Uncomment the [[routes]] block below
-#   6. `wrangler deploy` -- binding succeeds, traffic flows
-#
-# [[routes]]
-# pattern = "continuo.cloud"
-# custom_domain = true
+# Custom domain binding -- continuo.cloud is now on Cloudflare nameservers
+# (bob.ns.cloudflare.com + diva.ns.cloudflare.com, verified 2026-04-27),
+# so wrangler can bind it directly via this routes block.
+[[routes]]
+pattern = "continuo.cloud"
+custom_domain = true

@@ -10,13 +10,15 @@ item in the "Pre-launch" section is green.
 - [x] **Landing page deployed to Cloudflare Workers**
       Verified live at `https://continuo-cloud-landing.ryandavispro1.workers.dev`
       (commit `9821eba`, 2026-04-27)
-- [ ] **Cloudflare custom domain bound** — bind `continuo.cloud` to the
-      `continuo-cloud-landing` worker via the Cloudflare dashboard
-- [ ] **IONOS DNS pointed at Cloudflare** — either change nameservers OR add
-      a CNAME for `continuo.cloud` pointing at the workers.dev URL.
-      DNS propagation: 1-24 hrs.
-- [ ] **`curl https://continuo.cloud` returns HTTP 200 with the landing
-      HTML** — gate on this before any social post fires
+- [x] **Cloudflare custom domain bound** to the `continuo-cloud-landing`
+      worker (after deleting the orphan `continuo-web` worker + its imported
+      IONOS A/AAAA records, see commit `0d77742` for the journey)
+- [x] **IONOS DNS pointed at Cloudflare** — nameservers changed to
+      `bob.ns.cloudflare.com` + `diva.ns.cloudflare.com`. Propagation
+      complete; continuo.cloud now resolves to Cloudflare anycast
+      (`172.67.164.58`, `104.21.10.194`, IPv6).
+- [x] **`curl https://continuo.cloud` returns HTTP 200 with the landing
+      HTML** — verified via 1.1.1.1 resolver: 9.2KB, ~370ms cold
 - [ ] **GitHub repo `getcontinuo/continuo` About sidebar populated**:
       - Description: "Cross-agent memory federation with a recognition-
         first runtime model. Pre-alpha. MIT."
