@@ -376,3 +376,86 @@ retrieve and how naturally it behaves in the first moments of interaction.
   2026-04-22 landscape sweep)
 - Architecture: complete and wired in tests; integration into a
   live agent's response loop is the next experimental step.
+
+---
+
+## 2026-04-28 - Launch day: Twitter live, HN gated
+
+### Context
+- Objective: post the Continuo launch publicly to convert technical
+  priority (the public POSITIONING.md commit on 2026-04-22) into
+  discoverable priority before any peer paper publishes the same
+  framing.
+- Channels planned: Twitter thread (7 tweets) + Show HN, with the
+  Twitter thread firing first and HN ~30 minutes later.
+
+### Timeline
+- continuo.cloud verified live (HTTP 200, 9.2KB, ~250ms TTFB).
+- Repo About sidebar populated (description + homepage + 8 topics).
+- README first line hoisted to feature continuo.cloud above the fold
+  (commit 801a129).
+- scripts/launch.py written + shipped (commit 4b9da91): interactive
+  poster with weighted-char Twitter pre-flight (URLs = 23, codepoints
+  > U+10FF count as 2) and HN's 80-char title limit. Pre-flight caught
+  5 of 7 tweets over the 280-weighted limit and the HN title at 89/80.
+- Drafts tightened (commit 68ee421): tweets 2/3/4/6/7 trimmed,
+  HN title swapped to the alternate ("Show HN: Continuo - recognition-
+  first memory for AI agents", 58 chars).
+- 9am Pacific: Twitter thread posted via the X compose-stack flow
+  (all 7 tweets atomic). User reports "We are live!"
+- ~9:30am Pacific: HN submission attempted. Hit anti-spam gate:
+  "We're temporarily restricting Show HNs because of a massive influx,
+  mostly by users who aren't yet familiar with the site or its
+  culture." Account-age + karma based, automatic, not personal.
+
+### Decisions
+- Decision: do NOT try to game the HN gate (different account, dropping
+  Show HN prefix, etc.).
+  Rationale: HN's anti-abuse posture is well-documented; gaming it
+  burns the account permanently and signals exactly the kind of
+  marketing-first behavior the gate exists to filter.
+  Impact: HN becomes a deferred channel, not the launch's load-bearing
+  signal.
+- Decision: email dang/hn@ycombinator.com to request whitelist for this
+  specific submission, with the actual post content inline.
+  Rationale: dang is known to whitelist legitimate launches that hit
+  the gate. The post is bona fide (open-source, MIT, building in
+  public, asks for falsification not validation).
+  Impact: HN may go live in 24-48h if approved; if not, build comment
+  karma over weeks and retry.
+- Decision: lean into Twitter as today's primary signal.
+  Rationale: thread is live, pinned, reachable. The launch was always
+  a publish-the-thesis move first, traffic-spike second (per
+  LAUNCH_CHECKLIST). The thesis IS published.
+- Decision: keep the Wednesday reception check scheduled but adjust
+  its prompt to expect HN may not be live.
+  Rationale: Twitter + GitHub stars + Cloudflare traffic are still
+  meaningful signals on their own. The agent should not waste cycles
+  hunting for an HN post that may not exist.
+
+### Findings (the actual journal point)
+- The HN Show gate is a real launch-day risk that none of the launch
+  drafts anticipated. LAUNCH_CHECKLIST should add a pre-launch item:
+  "verify HN account is past the anti-abuse threshold (commented
+  thoughtfully in the last few weeks, has karma)."
+- Twitter compose-stack ("+" button) is meaningfully better than
+  reply-chain for thread launches: atomic post, single algorithm
+  signal. scripts/launch.py defaults to reply-chain instructions; the
+  helper text should call out compose-stack as the preferred path.
+- The pre-flight caught real launch-blocking content bugs (5 tweets
+  over weighted limit, HN title over the 80-char cap) that manual
+  review missed. Twitter's weighted-char counting (URLs = 23,
+  codepoints > U+10FF count as 2) is non-obvious and worth its own
+  defensive layer.
+
+### Actions
+- Owner: Ry
+  Action: send dang whitelist request email today.
+  Expected effect: HN post live within 24-48h, OR dang declines and
+  the deferred-karma path activates.
+- Owner: Future cycle
+  Action: update LAUNCH_CHECKLIST with the HN-account-readiness
+  pre-launch item.
+- Owner: Future cycle
+  Action: update scripts/launch.py instructions to recommend
+  compose-stack over reply-chain.
