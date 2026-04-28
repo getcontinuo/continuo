@@ -31,20 +31,19 @@ context, not for engagement-bait.
 >
 >   you speak → silence → AI searches → AI replies
 >
-> That serial pipeline is why memory-enabled agents still feel like
-> databases that talk. Real conversation is concurrent — recognition
-> happens first, hydration runs in parallel.
+> A serial pipeline is why memory-enabled agents feel like databases.
+> Real conversation is concurrent: recognition first, hydration parallel.
 
 ---
 
 ## Tweet 3 / The OMNIvour test (the lived bug)
 
-> Tested this last week. Wired Codex into a fully populated agent-memory
-> federation, asked: "What do you know about OMNIvour?"
+> Last week: Codex on a populated memory federation.
+> Asked: "What do you know about OMNIvour?"
 >
-> Data layer worked perfectly. Behavior was wrong. Codex searched first,
-> summarized notes second. A mind would've said "Oh — OMNIvour, the file
-> converter project" in 200ms.
+> Data layer worked. Behavior was wrong. Codex searched first,
+> summarized second. A mind would've said "Oh, OMNIvour, the file
+> converter" in 200ms.
 >
 > That gap is the product.
 
@@ -52,14 +51,14 @@ context, not for engagement-bait.
 
 ## Tweet 4 / The architecture
 
-> Continuo is built around a tiered timing model:
+> Continuo's timing model:
 >
->  L0  hot cache         → recognition substrate (always loaded)
->  L1  entity synopses   → hydration substrate (parallel-loaded)
->  L2-L4  episodic + indexed + archive  → descent substrate
->  L5/L6  manifest + federation  → cross-agent recognition
+>  L0  hot cache       → recognition (always loaded)
+>  L1  entity synopses → hydration (parallel-loaded)
+>  L2-L4  episodic + index + archive → descent
+>  L5/L6  manifest + federation → cross-agent
 >
-> The numbering encodes the *time budget* each layer fits in.
+> Numbering = time budget each layer fits in.
 
 ---
 
@@ -78,14 +77,13 @@ context, not for engagement-bait.
 
 > Pre-alpha v0.0.7, MIT, public:
 >
->   • L0-L6 stack working in tests (250/250)
->   • Adapters for Claude Code + Codex
+>   • 250/250 tests passing
+>   • Adapters: Claude Code, Codex
 >   • Native publisher for a local AI swarm
->   • Recognition-first runtime ships as a Python module
->   • SessionEnd hook for auto-federation
->   • `continuo codex eval --recognition` measures it (24µs avg)
+>   • Recognition runtime as Python module (24µs avg)
+>   • SessionEnd hook = auto-federation
 >
-> All free, all open, all on GitHub.
+> Free, open, on GitHub.
 
 ---
 
@@ -95,9 +93,9 @@ context, not for engagement-bait.
 >
 > Code: https://github.com/getcontinuo/continuo
 >
-> Most-wanted contributions: adapters for Cursor + Cline, integration of
-> the recognition runtime into a real agent's response loop, and honest
-> falsification attempts. Falsifiability is in the thesis doc.
+> Most-wanted: adapters for Cursor + Cline, integration of the
+> recognition runtime into a real agent's response loop, and honest
+> falsification attempts.
 >
 > Recognition first.
 

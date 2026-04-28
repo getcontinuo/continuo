@@ -13,11 +13,12 @@ sober prose-driven than Twitter, so the draft reads accordingly.
 
 ## Title
 
+> Show HN: Continuo – recognition-first memory for AI agents
+
+(Original draft was longer; HN's 80-char title limit pushed us to the
+tighter version, which is also more direct:)
 > Show HN: Continuo – memory framework for AI agents that fixes the
 > call-and-repeat problem
-
-(Title alternates if first feels too dramatic on the day:)
-> Show HN: Continuo – recognition-first memory for AI agents
 
 ---
 
