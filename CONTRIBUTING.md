@@ -13,6 +13,7 @@ v0.0.1 scaffold. Phase 1 reference orchestrator (L0 + L1) is working standalone.
 - **Read the thesis.** [`spec/THESIS.md`](spec/THESIS.md) explains *why* the architecture looks the way it does. If you disagree with the thesis, your contribution may end up pulling in the wrong direction.
 - **Read the architecture.** [`spec/ARCHITECTURE_v0.1.md`](spec/ARCHITECTURE_v0.1.md) is the full layer-by-layer description.
 - **See use cases.** [`spec/USE_CASES.md`](spec/USE_CASES.md) shows the intended breadth — dev tools are the proving ground, but the architecture targets universal knowledge work.
+- **Check the contributor list.** [`CONTRIBUTORS.md`](CONTRIBUTORS.md) lists maintainers and AI co-implementors with their branch lanes (`cursor/*`, `claude/*`, `codex/*`). If you're submitting agent-assisted work, follow the agent-as-author convention documented there.
 
 ## Types of Contributions
 
@@ -20,7 +21,7 @@ v0.0.1 scaffold. Phase 1 reference orchestrator (L0 + L1) is working standalone.
 Continuo's value scales linearly with the number of agents/tools it can federate. An adapter reads a native agent's memory store and emits a normalized L5 manifest. See [`adapters/`](adapters/) for examples (once implemented) and the adapter contract spec in `spec/ADAPTER_CONTRACT.md` (coming in v0.1.0).
 
 Specifically wanted:
-- Cursor adapter (SQLite schema reverse-engineering)
+- Cursor adapter (SQLite schema reverse-engineering) — v0 in progress at [`ryandavispro1-cmyk/cursor-spot`](https://github.com/ryandavispro1-cmyk/cursor-spot); will upstream once stable.
 - Copilot adapter (accepting the encrypted-reasoning limitation)
 - LangChain / CrewAI / AutoGen memory exporters
 - Non-agent data sources: Linear, Attio, Notion, Google Calendar, Slack, email (IMAP/MBOX), Obsidian
