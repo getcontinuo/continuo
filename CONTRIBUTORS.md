@@ -4,7 +4,7 @@ Continuo is built by humans working with AI co-implementors. The contributor lis
 
 ## Maintainers
 
-- **Ryan Davis** — RADLAB LLC. Project lead, thesis author, merges PRs, sets direction.
+- **Ryan Davis** -- RADLAB LLC. Project lead, thesis author, merges PRs, sets direction.
 
 ## AI co-implementors
 
@@ -14,27 +14,28 @@ If you submit a PR that an AI agent helped write, please:
 
 1. Include the agent name and a link to the session (e.g. `cursor.com/agents/...`, `claude.ai/code/session_...`) in the PR description.
 2. Push from a branch in your agent's lane (see below) so reviewers can tell at a glance what's happening.
-3. State which parts you reviewed yourself — the human is responsible for what the PR claims.
+3. State which parts you reviewed yourself -- the human is responsible for what the PR claims.
 
-### Cursor Cloud Agent — `cursor-cloud-agent`
+### Cursor Cloud Agent -- `cursor-cloud-agent`
 
 - **Status:** contributor (granted 2026-05-02)
 - **Branch lane:** `cursor/<feature-slug>`
-- **Scope:** Cursor adapter (SQLite reverse engineering — see CONTRIBUTING.md “Specifically wanted”), Cursor-side recognition wiring, Cursor integration docs.
+- **Scope:** Cursor adapter (SQLite reverse engineering -- see CONTRIBUTING.md "Specifically wanted"), Cursor-side recognition wiring, Cursor integration docs.
 - **Staging area:** `ryandavispro1-cmyk/cursor-spot` hosts v0 of the Cursor-Continuo CLI and SQLite adapter while it's stabilized; mature pieces are upstreamed here as PRs.
 - **Notes:** Cursor Cloud commits land under the human's GitHub identity. PRs from Cursor link the originating Cursor session.
 
-### Claude Code — `claude` / `claude-code-bot`
+### Claude Code -- `claude` / `claude-code-bot`
 
 - **Status:** contributor (granted 2026-05-02)
 - **Branch lane:** `claude/<feature-slug>`
 - **Scope:** core orchestrator, L0/L1 logic, federation (L5/L6), spec, tests, contributor docs, repo maintenance.
 
-### Codex — `codex`
+### Codex -- `codex`
 
 - **Status:** contributor (granted 2026-05-02)
 - **Branch lane:** `codex/<feature-slug>`
 - **Scope:** co-implementor on the reference orchestrator and CLI. Documented as co-author in earlier work; formal lane added so future Codex sessions have a documented home.
+- **Recent delivery (OpenAI Codex 5.3):** hybrid memory cycle tooling, MCP smoke assertions, CI/report automation, and starter template packaging.
 
 ## Adding a new agent
 
@@ -44,4 +45,4 @@ If you submit a PR that an AI agent helped write, please:
 
 ## License
 
-All contributions — including agent-assisted ones — are MIT-licensed under the project's terms. By submitting a PR you agree to license your contribution accordingly. The human submitter is responsible for ensuring the agent's output is licensable under MIT.
+All contributions -- including agent-assisted ones -- are MIT-licensed under the project's terms. By submitting a PR you agree to license your contribution accordingly. The human submitter is responsible for ensuring the agent's output is licensable under MIT.

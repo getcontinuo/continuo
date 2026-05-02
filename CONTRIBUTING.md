@@ -54,6 +54,22 @@ source .venv/bin/activate   # macOS/Linux
 pip install -e .[dev]
 ```
 
+## Hybrid Memory Cycle Workflow
+
+For contributors working on L5/L6 federation and retrieval ergonomics, use the memory-cycle scripts:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/bootstrap-continuo-mcp.ps1 -WorkspaceRoot "."
+powershell -ExecutionPolicy Bypass -File scripts/run_memory_cycle.ps1 -WorkspaceRoot "." -SchemaPath ".\spec\L5_schema.json"
+```
+
+This run validates:
+
+- short-index merge and workspace-over-global precedence
+- L5 export correctness
+- MCP tool availability + smoke assertions
+- machine-readable report output under `.cursor/memory/reports/`
+
 Running the smoke test:
 ```bash
 cd core/

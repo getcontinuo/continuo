@@ -93,6 +93,27 @@ continuo codex eval --fixtures
 
 This generic Codex path is designed for org-wide distribution: local Codex memories stay `team` by default, public federation requires explicit promotion, and generated L0/L1 artifacts live separately from the repo's static Clyde examples.
 
+## Quick Start (Hybrid Memory Cycle)
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/bootstrap-continuo-mcp.ps1 -WorkspaceRoot "."
+powershell -ExecutionPolicy Bypass -File scripts/run_memory_cycle.ps1 -WorkspaceRoot "." -SchemaPath ".\spec\L5_schema.json"
+```
+
+What this does:
+
+- Builds and validates hybrid memory indices.
+- Exports L5 manifests to workspace + `~/agent-library/agents/`.
+- Runs MCP smoke assertions against the L6 server.
+- Writes machine-readable reports:
+  - `.cursor/memory/reports/mcp-smoke-report.json`
+  - `.cursor/memory/reports/memory-cycle-report.json`
+
+Docs:
+
+- [`docs/getting-started-memory-cycle.md`](docs/getting-started-memory-cycle.md)
+- [`docs/good-first-issues.md`](docs/good-first-issues.md)
+
 ## Roadmap
 
 - **v0.0.1** (now) — Scaffold + Phase 1 orchestrator (L0 + L1, manual files, Ollama-compatible)
@@ -133,6 +154,7 @@ Continuo is an open-source memory protocol and reference implementation seeded b
 - Ryan Davis -- creator, thesis, architecture, implementation direction
 - Claude -- thesis drafting, architecture planning, early implementation
 - Codex -- Codex adapter expansion, CLI implementation, timing-artifact generation, access-level model
+- OpenAI Codex 5.3 -- hybrid memory cycle tooling, MCP smoke assertions, CI/report automation, starter template packaging
 
 ## Other RADLAB Projects
 

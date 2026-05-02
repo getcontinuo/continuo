@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "topic_key": "continuo_mcp",
+      "topic_name": "Continuo MCP",
+      "summary": "Starter topic for Continuo memory federation.",
+      "triggers": [
+        "continuo",
+        "memory federation",
+        "l6 server"
+      ],
+      "scope": "workspace",
+      "access_level": "team",
+      "last_updated": "2026-05-01",
+      "tags": [
+        "starter",
+        "memory-chain"
+      ]
+    }
+  ]
+}
