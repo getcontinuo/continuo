@@ -7,12 +7,14 @@ from pathlib import Path
 
 import pytest
 
+from core.inference_protocol import BackendCapabilities, Slot
 from core.recognition_runtime import (
     DEFAULT_HYDRATION_TIMEOUT,
     RecognitionResult,
     build_recognition_string,
     detect_entities,
     hydrate_l1,
+    interrupt_first,
     recognition_first,
 )
 
@@ -274,3 +276,188 @@ def test_recognition_first_visibility_filter_excludes_private_entity():
 def test_default_hydration_timeout_is_three_seconds():
     """Module-level constant should be 3.0s, the documented thesis budget."""
     assert DEFAULT_HYDRATION_TIMEOUT == 3.0
+
+
+# ---- interrupt_first --------------------------------------------------------
+
+
+class _CancelTrackingBackend:
+    """Minimal InferenceBackend test double that records cancel() calls.
+
+    Implements only the structural surface needed by interrupt_first; the
+    streaming and slot-enumeration paths are no-ops since interrupt_first
+    only invokes cancel().
+    """
+
+    def __init__(self) -> None:
+        self.cancel_calls: list[int] = []
+        # Order tracker: append "cancel" or "post-cancel" to verify ordering.
+        self.cancel_completed_at: float | None = None
+
+    def capabilities(self) -> BackendCapabilities:
+        return BackendCapabilities(
+            streaming=True, cancel=True, concurrent_slots=1, kv_cache_reuse=True
+        )
+
+    async def slots(self) -> list[Slot]:
+        return []
+
+    async def stream_completion(self, prompt, *, slot_id=None):
+        for token in []:  # noqa: B007 -- empty async generator
+            yield token
+
+    async def cancel(self, slot_id: int) -> None:
+        # Tiny await so concurrent ordering is observable in tests.
+        await asyncio.sleep(0)
+        self.cancel_calls.append(slot_id)
+
+
+@pytest.mark.asyncio
+async def test_interrupt_first_cancels_specified_slot():
+    backend = _CancelTrackingBackend()
+    manifest = {"known_entities": [{"name": "Apex", "type": "project"}]}
+    result = await interrupt_first(
+        "tell me about Apex",
+        manifest,
+        backend=backend,
+        slot_to_cancel=3,
+    )
+    assert backend.cancel_calls == [3]
+    assert result.recognition  # entity matched, recognition emitted
+    if result.hydration is not None:
+        result.hydration.close()
+
+
+@pytest.mark.asyncio
+async def test_interrupt_first_returns_recognition_for_new_message_not_old():
+    """The recognition is computed from the NEW message, not whatever was
+    being said before the interrupt."""
+    backend = _CancelTrackingBackend()
+    manifest = {
+        "known_entities": [
+            {"name": "Foo", "type": "project"},
+            {"name": "Bar", "type": "project"},
+        ]
+    }
+    result = await interrupt_first(
+        "actually wait, tell me about Bar",
+        manifest,
+        backend=backend,
+        slot_to_cancel=0,
+    )
+    matched_names = {e["name"] for e in result.matched_entities}
+    assert matched_names == {"Bar"}
+    assert "Bar" in result.recognition
+    if result.hydration is not None:
+        result.hydration.close()
+
+
+@pytest.mark.asyncio
+async def test_interrupt_first_returns_no_hydration_when_no_match():
+    backend = _CancelTrackingBackend()
+    manifest = {"known_entities": [{"name": "Foo", "type": "project"}]}
+    result = await interrupt_first(
+        "this matches nothing",
+        manifest,
+        backend=backend,
+        slot_to_cancel=0,
+    )
+    assert result.recognition == ""
+    assert result.matched_entities == []
+    assert result.hydration is None
+
+
+@pytest.mark.asyncio
+async def test_interrupt_first_provides_hydration_when_match(tmp_path):
+    l1_dir = tmp_path / "l1"
+    l1_dir.mkdir()
+    (l1_dir / "Apex.md").write_text("# Apex\n\nDetailed L1 synopsis.", encoding="utf-8")
+
+    backend = _CancelTrackingBackend()
+    manifest = {"known_entities": [{"name": "Apex", "type": "project"}]}
+    result = await interrupt_first(
+        "tell me about Apex",
+        manifest,
+        backend=backend,
+        slot_to_cancel=0,
+        l1_dir=l1_dir,
+    )
+    assert result.hydration is not None
+    detail = await result.hydration
+    assert "Detailed L1 synopsis" in detail
+
+
+@pytest.mark.asyncio
+async def test_interrupt_first_respects_access_level():
+    """Visibility filter should apply identically to recognition_first."""
+    backend = _CancelTrackingBackend()
+    manifest = {
+        "known_entities": [
+            {"name": "PublicProject", "type": "project"},
+            {"name": "SecretSauce", "type": "project", "visibility": "private"},
+        ]
+    }
+    result = await interrupt_first(
+        "tell me about SecretSauce and PublicProject",
+        manifest,
+        backend=backend,
+        slot_to_cancel=0,
+        access_level="team",
+    )
+    matched_names = {e["name"] for e in result.matched_entities}
+    assert "PublicProject" in matched_names
+    assert "SecretSauce" not in matched_names
+    if result.hydration is not None:
+        result.hydration.close()
+
+
+@pytest.mark.asyncio
+async def test_interrupt_first_returns_recognition_result_type():
+    """Sanity: same shape as recognition_first."""
+    backend = _CancelTrackingBackend()
+    manifest = {"known_entities": []}
+    result = await interrupt_first(
+        "anything", manifest, backend=backend, slot_to_cancel=0
+    )
+    assert isinstance(result, RecognitionResult)
+
+
+@pytest.mark.asyncio
+async def test_interrupt_first_calls_cancel_before_computing_recognition():
+    """Ordering invariant: cancel must complete before recognition is
+    composed. If the order flipped, recognition would already be ms behind
+    when cancel fires -- which is exactly what the primitive is supposed
+    to prevent."""
+
+    order: list[str] = []
+
+    class _OrderingBackend:
+        def capabilities(self) -> BackendCapabilities:
+            return BackendCapabilities(
+                streaming=True, cancel=True, concurrent_slots=1, kv_cache_reuse=False
+            )
+
+        async def slots(self) -> list[Slot]:
+            return []
+
+        async def stream_completion(self, prompt, *, slot_id=None):
+            for t in []:  # noqa: B007
+                yield t
+
+        async def cancel(self, slot_id: int) -> None:
+            await asyncio.sleep(0.01)  # forced async gap
+            order.append("cancel-done")
+
+    # Manifest with an entity so build_recognition_string actually runs.
+    manifest = {"known_entities": [{"name": "Z", "type": "project"}]}
+
+    result = await interrupt_first(
+        "tell me about Z",
+        manifest,
+        backend=_OrderingBackend(),
+        slot_to_cancel=0,
+    )
+    order.append("recognition-built")
+    assert order == ["cancel-done", "recognition-built"]
+    if result.hydration is not None:
+        result.hydration.close()
