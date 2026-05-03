@@ -153,7 +153,11 @@ class LlamaCppBackend:
                 "LlamaCppBackend.slots(): expected list, got %s", type(data).__name__
             )
             return []
-        return [self._parse_slot(s) for s in data if isinstance(s, dict)]
+        try:
+            return [self._parse_slot(s) for s in data if isinstance(s, dict)]
+        except (TypeError, ValueError) as exc:
+            logger.warning("LlamaCppBackend.slots() failed to parse slot payload: %s", exc)
+            return []
 
     async def stream_completion(
         self,
@@ -178,54 +182,55 @@ class LlamaCppBackend:
         # id, and re-key once observed.
         tracking_key: Optional[int] = slot_id
         stop_event = asyncio.Event()
-        if tracking_key is not None:
-            self._stop_events[tracking_key] = stop_event
-
-        async with self._client.stream(
-            "POST", "/completion", json=body, headers=headers
-        ) as resp:
-            resp.raise_for_status()
+        try:
             if tracking_key is not None:
-                self._active_responses[tracking_key] = resp
-            try:
-                async for line in resp.aiter_lines():
-                    if stop_event.is_set():
-                        return
-                    event = _parse_sse_line(line)
-                    if event is None:
-                        continue
-                    if event.get("error"):
-                        raise RuntimeError(
-                            f"llama-server error: {event['error']}"
-                        )
-                    # If we did not know the slot at request time, learn it
-                    # from the first event that carries one and start tracking.
-                    observed = event.get("id_slot")
-                    if (
-                        tracking_key is None
-                        and isinstance(observed, int)
-                    ):
-                        tracking_key = observed
-                        self._active_responses[tracking_key] = resp
-                        self._stop_events[tracking_key] = stop_event
-                    content = event.get("content", "")
-                    if content:
-                        yield content
-                    if event.get("stop"):
-                        return
-            except (httpx.ReadError, httpx.RemoteProtocolError) as exc:
-                # Connection closed mid-read. If cancel() set the stop
-                # event, this is a graceful cancellation and we exit
-                # cleanly. Otherwise it's an unexpected stream failure
-                # and the caller deserves to know.
-                if stop_event.is_set():
-                    logger.debug("stream cancelled mid-read: %s", exc)
-                    return
-                raise
-            finally:
+                self._stop_events[tracking_key] = stop_event
+
+            async with self._client.stream(
+                "POST", "/completion", json=body, headers=headers
+            ) as resp:
+                resp.raise_for_status()
                 if tracking_key is not None:
-                    self._active_responses.pop(tracking_key, None)
-                    self._stop_events.pop(tracking_key, None)
+                    self._active_responses[tracking_key] = resp
+                try:
+                    async for line in resp.aiter_lines():
+                        if stop_event.is_set():
+                            return
+                        event = _parse_sse_line(line)
+                        if event is None:
+                            continue
+                        if event.get("error"):
+                            raise RuntimeError(
+                                f"llama-server error: {event['error']}"
+                            )
+                        # If we did not know the slot at request time, learn it
+                        # from the first event that carries one and start tracking.
+                        observed = event.get("id_slot")
+                        if (
+                            tracking_key is None
+                            and isinstance(observed, int)
+                        ):
+                            tracking_key = observed
+                            self._active_responses[tracking_key] = resp
+                            self._stop_events[tracking_key] = stop_event
+                        content = event.get("content", "")
+                        if content:
+                            yield content
+                        if event.get("stop"):
+                            return
+                except (httpx.ReadError, httpx.RemoteProtocolError) as exc:
+                    # Connection closed mid-read. If cancel() set the stop
+                    # event, this is a graceful cancellation and we exit
+                    # cleanly. Otherwise it's an unexpected stream failure
+                    # and the caller deserves to know.
+                    if stop_event.is_set():
+                        logger.debug("stream cancelled mid-read: %s", exc)
+                        return
+                    raise
+        finally:
+            if tracking_key is not None:
+                self._active_responses.pop(tracking_key, None)
+                self._stop_events.pop(tracking_key, None)
 
     async def cancel(self, slot_id: int) -> None:
         """Stop generation on ``slot_id`` via stop-event + connection close.

@@ -167,6 +167,18 @@ async def test_slots_handles_missing_prompt():
     assert out == [Slot(id=0, busy=False, prompt_prefix_hash=None)]
 
 
+@pytest.mark.parametrize("raw_id", [None, "abc"])
+async def test_slots_returns_empty_list_on_malformed_slot_id(raw_id):
+    def handler(request):
+        return httpx.Response(
+            200,
+            json=[{"id": raw_id, "is_processing": False}],
+        )
+
+    backend = _make_backend(handler)
+    assert await backend.slots() == []
+
+
 async def test_slots_sends_auth_header_when_api_key_set():
     captured: dict[str, str | None] = {}
 
@@ -311,6 +323,17 @@ async def test_stream_completion_sends_accept_event_stream_header():
     async for _ in backend.stream_completion("test"):
         pass
     assert captured["accept"] == "text/event-stream"
+
+
+async def test_stream_completion_cleans_stop_event_on_http_error():
+    def handler(request):
+        return httpx.Response(500, json={"error": "kaboom"})
+
+    backend = _make_backend(handler)
+    with pytest.raises(httpx.HTTPStatusError):
+        async for _ in backend.stream_completion("test", slot_id=2):
+            pass
+    assert backend._stop_events == {}
 
 
 # ---- cancel() ---------------------------------------------------------------
