@@ -223,7 +223,11 @@ class LlamaCppBackend:
                             yield content
                         if event.get("stop"):
                             return
-                except (httpx.ReadError, httpx.RemoteProtocolError) as exc:
+                except (
+                    httpx.ReadError,
+                    httpx.RemoteProtocolError,
+                    httpx.StreamClosed,
+                ) as exc:
                     # Connection closed mid-read. If cancel() set the stop
                     # event, this is a graceful cancellation and we exit
                     # cleanly. Otherwise it's an unexpected stream failure
