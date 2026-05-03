@@ -12,7 +12,6 @@ import pytest
 from adapters.base import AdapterDiscoveryError, L5Manifest
 from adapters.cursor import AGENT_ID, AGENT_TYPE, CursorAdapter
 
-
 # ---- Helpers ----------------------------------------------------------------
 
 
@@ -132,8 +131,8 @@ def test_export_l5_filters_by_since(tmp_path):
     adapter = CursorAdapter(cursor_dir=cursor_dir)
     cutoff = datetime(2026, 1, 1, tzinfo=UTC)
     manifest = adapter.export_l5(since=cutoff)
-    dates = [s.date for s in manifest.recent_sessions]
-    assert all(d >= "2026-01-01" for d in dates if d), dates
+    assert [session.cwd for session in manifest.recent_sessions] == ["/p/new"]
+    assert [session.date for session in manifest.recent_sessions] == ["2026-04-30"]
 
 
 # ---- export_sessions() ------------------------------------------------------
@@ -161,6 +160,92 @@ def test_export_sessions_respects_limit(tmp_path):
         since=datetime(2020, 1, 1, tzinfo=UTC), limit=3
     )
     assert len(sessions) == 3
+
+
+def test_export_sessions_filters_by_last_updated_at_since(tmp_path):
+    cursor_dir = _make_cursor_dir(tmp_path)
+    db = cursor_dir / "state.vscdb"
+    _seed_state_db(
+        db,
+        [
+            (
+                "composer.old",
+                {
+                    "workspacePath": "/p/old",
+                    "title": "old work",
+                    "messages": [],
+                    "lastUpdatedAt": "2025-01-01T00:00:00Z",
+                },
+            ),
+            (
+                "composer.new",
+                {
+                    "workspacePath": "/p/new",
+                    "title": "new work",
+                    "messages": [],
+                    "lastUpdatedAt": "2026-04-30T00:00:00Z",
+                },
+            ),
+        ],
+    )
+
+    adapter = CursorAdapter(cursor_dir=cursor_dir)
+    sessions = adapter.export_sessions(since=datetime(2026, 1, 1, tzinfo=UTC))
+
+    assert [session.cwd for session in sessions] == ["/p/new"]
+    assert [session.date for session in sessions] == ["2026-04-30"]
+
+
+def test_export_sessions_skips_corrupt_db_and_keeps_valid_sessions(tmp_path):
+    cursor_dir = _make_cursor_dir(tmp_path)
+    corrupt_db = cursor_dir / "state.vscdb"
+    corrupt_db.write_bytes(b"not a real sqlite database")
+    valid_db = cursor_dir / "User" / "workspaceStorage" / "abc123" / "state.vscdb"
+    _seed_state_db(
+        valid_db,
+        [
+            (
+                "composer.valid",
+                {
+                    "workspacePath": "/p/valid",
+                    "title": "valid work",
+                    "messages": [],
+                    "lastUpdatedAt": "2026-04-30T00:00:00Z",
+                },
+            ),
+        ],
+    )
+
+    adapter = CursorAdapter(cursor_dir=cursor_dir)
+    sessions = adapter.export_sessions(since=datetime(2020, 1, 1, tzinfo=UTC))
+
+    assert [session.cwd for session in sessions] == ["/p/valid"]
+
+
+def test_export_l5_skips_corrupt_db_and_keeps_valid_sessions(tmp_path):
+    cursor_dir = _make_cursor_dir(tmp_path)
+    corrupt_db = cursor_dir / "state.vscdb"
+    corrupt_db.write_bytes(b"not a real sqlite database")
+    valid_db = cursor_dir / "User" / "workspaceStorage" / "abc123" / "state.vscdb"
+    _seed_state_db(
+        valid_db,
+        [
+            (
+                "composer.valid",
+                {
+                    "workspacePath": "/p/valid",
+                    "title": "valid work",
+                    "messages": [],
+                    "lastUpdatedAt": "2026-04-30T00:00:00Z",
+                },
+            ),
+        ],
+    )
+
+    adapter = CursorAdapter(cursor_dir=cursor_dir)
+    manifest = adapter.export_l5()
+
+    assert [session.cwd for session in manifest.recent_sessions] == ["/p/valid"]
 
 
 # ---- health_check() ---------------------------------------------------------
@@ -198,7 +283,7 @@ def test_health_check_does_not_raise_on_corrupt_db(tmp_path):
     # Must not raise; status may be ok/degraded depending on whether the
     # corrupt file is iterable. The contract is "never raises".
     health = adapter.health_check()
-    assert health.status in {"ok", "degraded", "blocked"}
+    assert health.status == "degraded"
 
 
 # ---- Protocol conformance ---------------------------------------------------

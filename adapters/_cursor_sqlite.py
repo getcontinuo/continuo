@@ -60,8 +60,11 @@ def extract_cursor_memories(cursor_dir: Path | None = None) -> CursorSQLiteMemor
     malformed_records = 0
 
     for db_path in _iter_state_dbs(root):
+        try:
+            records, bad_records = _read_item_table(db_path)
+        except (OSError, sqlite3.Error):
+            continue
         databases_scanned.append(str(db_path))
-        records, bad_records = _read_item_table(db_path)
         malformed_records += bad_records
         for key, value in records:
             parsed_session = _record_to_session(key, value)
@@ -192,7 +195,7 @@ def _first_message_text(messages: Any) -> str:
 
 
 def _date_from_record(value: dict[str, Any]) -> str:
-    for key in ("createdAt", "timestamp", "updatedAt", "time"):
+    for key in ("createdAt", "lastUpdatedAt", "timestamp", "updatedAt", "time"):
         candidate = value.get(key)
         parsed = _parse_date(candidate)
         if parsed:
