@@ -12,27 +12,22 @@ This isn't retrieval-augmented generation. This is **recognition-augmented cogni
 
 ---
 
-## 🚀 v0.0.10 — Cursor Adapter Graduates from cursor-spot
+## 🚀 v0.0.11 — Token-Based Recognition (No More Substring False-Positives)
 
-**Released 2026-05-03** · 330 unit + 5 live integration tests passing · MIT licensed · [continuo.cloud](https://continuo.cloud) live
+**Released 2026-05-03** · 335 unit + 5 live integration tests passing · MIT licensed · [continuo.cloud](https://continuo.cloud) live
 
 ### What's New
 
-🖱️ **Cursor adapter — `adapters/cursor.py`.** The deferred-to-v2 adapter from `DECISIONS.md` 2026-04-14 ("Cursor — opaque SQLite, needs reverse-engineering") graduates from the `cursor_continuo/` package in [`ryandavispro1-cmyk/cursor-spot`](https://github.com/ryandavispro1-cmyk/cursor-spot) into the canonical `getcontinuo/continuo` adapters directory. Reads Cursor's SQLite `state.vscdb` files at the platform-specific data directory (`~/.config/Cursor/` Linux, `~/Library/Application Support/Cursor/` macOS, `%APPDATA%\Cursor\` Windows), copies read-only to a tmp file before parsing so a running Cursor is undisturbed, and emits a normalized Continuo L5 manifest with project entities inferred from workspace paths. Visibility policy applied via `filter_for_federation` before manifest return. Registered under the standard `continuo.adapters` entry-point.
+🎯 **Token-based `detect_entities`.** Recognition matching is now token-based instead of substring-based. Both the user message and each candidate (entity name + aliases) are tokenized into runs of alphanumeric characters; the candidate must appear as a *contiguous token subsequence* within the user message. Caught the regression live during dogfood: a user message of "Random bananas" used to match a "NAS" entity because "ba**NAS**" contains the substring. With short entity names ("NAS", "ILTT", "Onyx") this happened often; recognition fired on irrelevant words. Now `'NAS'` only matches when the user types `NAS` as its own token.
 
-📚 **`CONTRIBUTORS.md` — stacked-PR cursor[bot] caveat.** Documents the foot-gun we hit on 2026-05-03 between PRs #12 and #14: when a stacked PR's parent merges, `cursor[bot]` may auto-close the child and delete its head ref within seconds, dropping commits unique to the child. Includes recovery path (`git cherry-pick` from local object store while still fetched) and avoidance patterns.
+✨ **Multi-word entities and aliases still work cleanly.** "DINOs Chess/Checkers" matches "how is DINOs Chess/Checkers doing" (tokens align across punctuation). Aliases remain the right tool when a shorter form should also match: an entity named "DINOs Chess/Checkers" with alias `"checkers"` matches a user saying "checkers", but **without** the alias, partial-name match is rejected -- which is what you want, because users saying "checkers" might mean something else entirely.
 
-🩹 **Python 3.10 compatibility fix.** `datetime.UTC` is 3.11+; Continuo's pyproject targets 3.10+. Switched the new Cursor adapter to `datetime.timezone.utc` (available since 3.2) so the matrix CI passes on all three Python versions.
-
-🧪 **335 tests passing** (was 323 at v0.0.9) — 12 new tests for the Cursor adapter (discover/export_l5/export_sessions/health_check, with synthetic SQLite seeds and corrupt-bytes coverage of the never-raises contract).
+🧪 **340 tests passing** (was 335 at v0.0.10) — 5 new test cases (substring false-positive, punctuation handling, alias-only match, contiguous-token requirement, empty/whitespace/punctuation-only message).
 
 ### Authorship
 
-The Cursor adapter completes the agent-as-author migration that started in v0.0.8:
-
-- **Cursor Cloud Agent** authored the SQLite extraction module (`adapters/_cursor_sqlite.py`), preserved verbatim from cursor-spot's original `cursor_continuo/sqlite_adapter.py`.
-- **Claude Opus 4.7 (1M context)** wrote the wrapping `CursorAdapter` class, the Continuo L5 schema mapping, and the test suite. Also fixed the 3.10 compat issue surfaced by CI.
-- The CONTRIBUTORS.md caveat note is by Claude.
+- **Claude Opus 4.7 (1M context)** wrote the token-based matcher and tests.
+- Bug originally caught live by Ry during dogfooding the recognition layer in Clyde.
 
 ### Get Started
 
@@ -47,7 +42,11 @@ pip install -e '.[server]'    # + L6 MCP federation server
 
 ## 📦 The Story So Far
 
-Ten releases. Six in one day (the foundational architecture), then the recognition-first runtime, then the backend-neutral inference layer, then end-to-end validation + Layer B, then the Cursor adapter graduation:
+Eleven releases. Six in one day (the foundational architecture), then the recognition-first runtime, then the backend-neutral inference layer, then end-to-end validation + Layer B, then the Cursor adapter graduation, then token-based recognition:
+
+### v0.0.10 — Cursor Adapter Graduates from cursor-spot
+
+**The deferred-from-day-1 Cursor adapter ships.** `adapters/cursor.py` reads Cursor's SQLite `state.vscdb` files at the platform-specific data directory, copies read-only to a tmp file before parsing, and emits a normalized Continuo L5 manifest. Cursor agent-as-author preserved on the SQLite extraction (`_cursor_sqlite.py`). All four headline IDE adapters (Claude Code, Codex, Cursor, native Clyde/Clair) are now in tree. CONTRIBUTORS.md gains a stacked-PR cursor[bot] caveat. **335 tests passing.**
 
 ### v0.0.9 — Layer A Validated + Layer B (`interrupt_first`)
 
@@ -136,6 +135,6 @@ Cross-agent federation:
 
 ---
 
-> ⚠️ **Pre-Alpha (v0.0.10).** Not production-ready — but the architecture is real, the tests pass, the federation loop works end-to-end, the recognition-first runtime is implemented, the inference layer it drives is backend-neutral, the timing thesis is proven as measured behavior on real hardware (recognition emitted in 0ms; the model's first token a full second behind), and the four headline IDE adapters (Claude Code, Codex, Cursor, native Clyde/Clair) are now all in tree. Built in the open as a spec-and-reference-implementation for a convention we hope the ecosystem adopts.
+> ⚠️ **Pre-Alpha (v0.0.11).** Not production-ready — but the architecture is real, the tests pass (340 of them), the federation loop works end-to-end, the recognition-first runtime is implemented and matches on token boundaries (no more substring false-positives), the inference layer it drives is backend-neutral, the timing thesis is proven as measured behavior on real hardware (recognition emitted in 0ms; the model's first token a full second behind), and the four headline IDE adapters (Claude Code, Codex, Cursor, native Clyde/Clair) are all in tree. Built in the open as a spec-and-reference-implementation for a convention we hope the ecosystem adopts.
 >
 > *We used our minds to make minds that make our minds better.*
