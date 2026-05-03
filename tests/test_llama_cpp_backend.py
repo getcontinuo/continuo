@@ -348,6 +348,44 @@ async def test_cancel_breaks_loop_before_next_event():
     assert tokens == ["hello"]
 
 
+async def test_cancel_swallows_stream_closed_when_reader_is_mid_read():
+    """Cancelling from another task should end the stream cleanly."""
+
+    class _BlockingStream(httpx.AsyncByteStream):
+        def __init__(self) -> None:
+            self.first_chunk_sent = asyncio.Event()
+            self.closed = asyncio.Event()
+
+        async def __aiter__(self):
+            yield b'data: {"content":"hello","stop":false,"id_slot":0}\n\n'
+            self.first_chunk_sent.set()
+            await self.closed.wait()
+            raise httpx.StreamClosed()
+
+        async def aclose(self) -> None:
+            self.closed.set()
+
+    stream = _BlockingStream()
+
+    def handler(request):
+        return httpx.Response(200, stream=stream)
+
+    backend = _make_backend(handler)
+    tokens: list[str] = []
+
+    async def consume() -> None:
+        async for tok in backend.stream_completion("test", slot_id=0):
+            tokens.append(tok)
+
+    task = asyncio.create_task(consume())
+    await stream.first_chunk_sent.wait()
+    await asyncio.sleep(0)
+    await backend.cancel(0)
+    await asyncio.wait_for(task, timeout=2.0)
+
+    assert tokens == ["hello"]
+
+
 # ---- aclose() lifecycle ----------------------------------------------------
 
 
