@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import AsyncIterator, Optional
+from collections.abc import AsyncIterator
 
 import pytest
 
@@ -13,7 +13,6 @@ from core.inference_protocol import (
     Slot,
     register_backend,
 )
-
 
 # ---- Test helpers -----------------------------------------------------------
 
@@ -32,7 +31,7 @@ class _FakeBackend:
         return []
 
     async def stream_completion(
-        self, prompt: str, *, slot_id: Optional[int] = None
+        self, prompt: str, *, slot_id: int | None = None
     ) -> AsyncIterator[str]:
         for token in []:  # noqa: B007 -- empty async generator on purpose
             yield token
@@ -215,3 +214,10 @@ def test_register_backend_unknown_capability_in_required_set_fails_fast():
     with pytest.raises(BackendUnsupported) as exc:
         register_backend(backend, required_capabilities={"streaming", "transmogrify"})
     assert exc.value.missing == ("transmogrify",)
+
+
+def test_register_backend_rejects_bare_string_required_capability():
+    backend = _FakeBackend(_caps(streaming=True, cancel=True))
+    with pytest.raises(TypeError) as exc:
+        register_backend(backend, required_capabilities="cancel")
+    assert "required_capabilities" in str(exc.value)
