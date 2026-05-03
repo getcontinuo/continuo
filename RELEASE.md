@@ -12,22 +12,24 @@ This isn't retrieval-augmented generation. This is **recognition-augmented cogni
 
 ---
 
-## 🚀 v0.0.11 — Token-Based Recognition (No More Substring False-Positives)
+## 🚀 v0.0.12 — Layer C: KV-Cache-Aware Interrupts
 
-**Released 2026-05-03** · 335 unit + 5 live integration tests passing · MIT licensed · [continuo.cloud](https://continuo.cloud) live
+**Released 2026-05-03** · 343 unit + 5 live integration tests passing · MIT licensed · [continuo.cloud](https://continuo.cloud) live
 
 ### What's New
 
-🎯 **Token-based `detect_entities`.** Recognition matching is now token-based instead of substring-based. Both the user message and each candidate (entity name + aliases) are tokenized into runs of alphanumeric characters; the candidate must appear as a *contiguous token subsequence* within the user message. Caught the regression live during dogfood: a user message of "Random bananas" used to match a "NAS" entity because "ba**NAS**" contains the substring. With short entity names ("NAS", "ILTT", "Onyx") this happened often; recognition fired on irrelevant words. Now `'NAS'` only matches when the user types `NAS` as its own token.
+🔁 **`RecognitionResult.recommended_slot_id`.** New optional field on the result object. For `interrupt_first` dispatches, this is populated with `slot_to_cancel` so the caller knows which slot the next `stream_completion` should run on. Pass it forward and llama-server's `cache_prompt: true` automatically reuses whatever prefix the new prompt shares with the cancelled one — avoiding a full prompt re-encode. `recognition_first` leaves the field `None` (no in-flight slot in the speaker-just-started case).
 
-✨ **Multi-word entities and aliases still work cleanly.** "DINOs Chess/Checkers" matches "how is DINOs Chess/Checkers doing" (tokens align across punctuation). Aliases remain the right tool when a shorter form should also match: an entity named "DINOs Chess/Checkers" with alias `"checkers"` matches a user saying "checkers", but **without** the alias, partial-name match is rejected -- which is what you want, because users saying "checkers" might mean something else entirely.
+🧬 **`build_splice_prompt(cancelled_prompt, cancelled_partial, new_user_msg, *, template=None)`.** Composes a continuation prompt that threads the interrupted context into the new turn. Default template puts the cancelled prompt + partial generation on top, an `[Interrupted at this point. New request: ...]` separator, then the new request. Custom format strings supported. The model sees the interruption narratively rather than as a hard reset — useful when the cancelled generation was producing signal the new turn should be aware of.
 
-🧪 **340 tests passing** (was 335 at v0.0.10) — 5 new test cases (substring false-positive, punctuation handling, alias-only match, contiguous-token requirement, empty/whitespace/punctuation-only message).
+🎛️ **Two valid interrupt strategies, now both first-class.** Hard reset (`new_user_msg` only) was the implicit default; **splice** (cancelled context + new request) is now a one-function-call option. Both flow through the same `recommended_slot_id` so KV-cache reuse applies regardless.
+
+🧪 **348 tests passing** (was 340 at v0.0.11) — 8 new test cases for `recommended_slot_id` semantics and `build_splice_prompt` template behavior, including empty-partial / empty-prior-prompt / None-arg defensive paths.
 
 ### Authorship
 
-- **Claude Opus 4.7 (1M context)** wrote the token-based matcher and tests.
-- Bug originally caught live by Ry during dogfooding the recognition layer in Clyde.
+- **Claude Opus 4.7 (1M context)** designed and implemented Layer C; the API shape (additive optional field + free-standing helper) was chosen so callers can adopt incrementally.
+
 
 ### Get Started
 
@@ -42,7 +44,11 @@ pip install -e '.[server]'    # + L6 MCP federation server
 
 ## 📦 The Story So Far
 
-Eleven releases. Six in one day (the foundational architecture), then the recognition-first runtime, then the backend-neutral inference layer, then end-to-end validation + Layer B, then the Cursor adapter graduation, then token-based recognition:
+Twelve releases. Six in one day (the foundational architecture), then the recognition-first runtime, the backend-neutral inference layer, end-to-end validation + Layer B, the Cursor adapter graduation, token-based recognition, and Layer C:
+
+### v0.0.11 — Token-Based Recognition
+
+Recognition matching switched from substring to **token-based**: both user message and entity candidate are tokenized into alphanumeric runs; the candidate must appear as a contiguous token subsequence. Fixes "ba**NAS**"-matches-"NAS" type false-positives caught live during dogfood. Multi-word entities still match across punctuation; aliases handle shorter forms when intended. **340 tests passing.**
 
 ### v0.0.10 — Cursor Adapter Graduates from cursor-spot
 
@@ -135,6 +141,6 @@ Cross-agent federation:
 
 ---
 
-> ⚠️ **Pre-Alpha (v0.0.11).** Not production-ready — but the architecture is real, the tests pass (340 of them), the federation loop works end-to-end, the recognition-first runtime is implemented and matches on token boundaries (no more substring false-positives), the inference layer it drives is backend-neutral, the timing thesis is proven as measured behavior on real hardware (recognition emitted in 0ms; the model's first token a full second behind), and the four headline IDE adapters (Claude Code, Codex, Cursor, native Clyde/Clair) are all in tree. Built in the open as a spec-and-reference-implementation for a convention we hope the ecosystem adopts.
+> ⚠️ **Pre-Alpha (v0.0.12).** Not production-ready — but the architecture is real, 348 tests pass, the federation loop works end-to-end, the recognition-first runtime is implemented (with both `recognition_first` and `interrupt_first` primitives, token-boundary entity matching, and a `build_splice_prompt` helper for narrative continuation across interrupts), the inference layer it drives is backend-neutral and KV-cache-reuse-aware, the timing thesis is proven as measured behavior on real hardware (recognition emitted in 0ms; the model's first token a full second behind), and the four headline IDE adapters (Claude Code, Codex, Cursor, native Clyde/Clair) are all in tree. Built in the open as a spec-and-reference-implementation for a convention we hope the ecosystem adopts.
 >
 > *We used our minds to make minds that make our minds better.*
