@@ -153,11 +153,15 @@ class LlamaCppBackend:
                 "LlamaCppBackend.slots(): expected list, got %s", type(data).__name__
             )
             return []
-        try:
-            return [self._parse_slot(s) for s in data if isinstance(s, dict)]
-        except (TypeError, ValueError) as exc:
-            logger.warning("LlamaCppBackend.slots() failed to parse slot payload: %s", exc)
-            return []
+        slots: list[Slot] = []
+        for raw_slot in data:
+            if not isinstance(raw_slot, dict):
+                continue
+            try:
+                slots.append(self._parse_slot(raw_slot))
+            except (TypeError, ValueError) as exc:
+                logger.warning("LlamaCppBackend.slots() failed to parse slot payload: %s", exc)
+        return slots
 
     async def stream_completion(
         self,

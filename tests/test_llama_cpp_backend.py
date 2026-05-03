@@ -167,6 +167,25 @@ async def test_slots_handles_missing_prompt():
     assert out == [Slot(id=0, busy=False, prompt_prefix_hash=None)]
 
 
+async def test_slots_preserves_valid_slots_when_one_entry_is_malformed():
+    def handler(request):
+        return httpx.Response(
+            200,
+            json=[
+                {"id": 0, "is_processing": False},
+                {"id": None, "is_processing": True},
+                {"id": 2, "is_processing": True},
+            ],
+        )
+
+    backend = _make_backend(handler)
+    out = await backend.slots()
+    assert out == [
+        Slot(id=0, busy=False, prompt_prefix_hash=None),
+        Slot(id=2, busy=True, prompt_prefix_hash=None),
+    ]
+
+
 @pytest.mark.parametrize("raw_id", [None, "abc"])
 async def test_slots_returns_empty_list_on_malformed_slot_id(raw_id):
     def handler(request):
