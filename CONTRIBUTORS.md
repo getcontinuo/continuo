@@ -37,6 +37,20 @@ If you submit a PR that an AI agent helped write, please:
 - **Scope:** co-implementor on the reference orchestrator and CLI. Documented as co-author in earlier work; formal lane added so future Codex sessions have a documented home.
 - **Recent delivery (OpenAI Codex 5.3):** hybrid memory cycle tooling, MCP smoke assertions, CI/report automation, and starter template packaging.
 
+## Stacked-PR caveat (cursor[bot] auto-close)
+
+When an agent (Cursor especially) opens a PR whose **base branch is another open PR's head branch** (a stacked PR), automation may auto-close the child PR when the parent merges -- even if the child contains commits the parent did not absorb. We hit this on 2026-05-03: PR #14 merged at `T+0`, and `cursor[bot]` closed PR #12 at `T+3 seconds` and deleted its head ref at `T+5 seconds`. Four hardening commits unique to the child became unreachable from any branch.
+
+Recovery is possible if you fetched recently (`git cat-file -e <sha>` confirms the SHA is still in your local object store; cherry-pick onto a fresh branch off `main`). But the recovery window is finite -- once garbage collection runs, the orphaned commits are gone.
+
+**To avoid this entirely:**
+
+- **Prefer non-stacked PRs.** Open the child against `main` directly with the parent's branch as a *base reference in the PR description*, rather than as the literal git base.
+- If you must stack, **squash the parent into the child branch before merging the parent**, so the child's diff against `main` is empty when the auto-close fires.
+- After merging a parent PR, **immediately verify any open child PRs** still target a valid branch and contain the expected diff.
+
+This entry exists because future agents working in stacked configurations need to know about the foot-gun before they hit it.
+
 ## Adding a new agent
 
 1. Add a section above with: name, branch lane, scope, identity-on-commits.
