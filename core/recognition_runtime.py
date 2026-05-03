@@ -81,6 +81,19 @@ class RecognitionResult:
     awaits this in parallel with their own streaming work. None when there are
     no matches (no point hydrating nothing)."""
 
+    recommended_slot_id: Optional[int] = None
+    """For interrupt-first dispatches: the slot ID the next ``stream_completion``
+    should run on to inherit the cancelled slot's KV cache. ``None`` for
+    plain ``recognition_first`` calls (no in-flight slot to continue from).
+
+    When the backend supports KV-cache reuse (``cache_prompt: true`` on
+    llama-server, set by ``LlamaCppBackend`` by default), passing this slot
+    ID forward lets the new prompt reuse whatever prefix it shares with
+    the cancelled prompt -- avoiding a full prompt re-encode.
+
+    See :func:`build_splice_prompt` for the optional helper that constructs
+    a "continuation" prompt acknowledging the interrupted context."""
+
 
 # -- Entity detection (mirrors core.orchestrator but reads a manifest) --------
 
@@ -401,13 +414,86 @@ async def interrupt_first(
     Returns
     -------
     RecognitionResult
-        For the *new* message, identical in shape to ``recognition_first``'s.
+        For the *new* message. Identical in shape to ``recognition_first``'s
+        output, with one addition: ``recommended_slot_id`` is populated
+        with ``slot_to_cancel`` so the caller can route the next
+        ``stream_completion`` to the same slot for KV-cache reuse.
     """
     await backend.cancel(slot_to_cancel)
-    return recognition_first(
+    result = recognition_first(
         new_user_msg,
         manifest,
         l1_dir=l1_dir,
         access_level=access_level,
         hydration_timeout=hydration_timeout,
+    )
+    # Layer C: signal which slot the caller should continue on. The cancelled
+    # slot still holds its KV cache server-side; reusing it lets the new
+    # prompt share whatever prefix it has with the cancelled one.
+    result.recommended_slot_id = slot_to_cancel
+    return result
+
+
+# -- Splice prompt helper (Layer C) --------------------------------------------
+
+
+_DEFAULT_SPLICE_TEMPLATE = (
+    "{cancelled_prompt}{cancelled_partial}\n\n"
+    "[Interrupted at this point. New request: {new_user_msg}]\n\n"
+)
+
+
+def build_splice_prompt(
+    cancelled_prompt: str,
+    cancelled_partial: str,
+    new_user_msg: str,
+    *,
+    template: Optional[str] = None,
+) -> str:
+    """Compose a continuation prompt that acknowledges the interrupted turn.
+
+    For the speaker-still-talking case, two prompt strategies are valid:
+
+      1. **Hard reset** -- new prompt is just ``new_user_msg``, the model
+         starts fresh. KV-cache reuse still applies via the system prompt
+         + L0 prefix (substantial).
+      2. **Splice** (this function) -- new prompt threads the cancelled
+         context into the new turn so the model sees the interruption
+         narratively. Useful when the cancelled generation was producing
+         signal the new turn should be aware of.
+
+    The default template is::
+
+        {cancelled_prompt}{cancelled_partial}
+
+        [Interrupted at this point. New request: {new_user_msg}]
+
+    Pass ``template`` (a Python format string with ``{cancelled_prompt}``,
+    ``{cancelled_partial}``, ``{new_user_msg}`` placeholders) to override.
+
+    Parameters
+    ----------
+    cancelled_prompt
+        The prompt that was being processed when interruption occurred.
+        May be empty.
+    cancelled_partial
+        Tokens emitted before cancellation, joined into a single string.
+        May be empty (cancel before first token).
+    new_user_msg
+        The interrupting message.
+    template
+        Optional override format string.
+
+    Returns
+    -------
+    str
+        The spliced prompt. Pass to ``backend.stream_completion`` on the
+        same slot the cancelled turn ran on (per
+        ``RecognitionResult.recommended_slot_id``) for KV-cache reuse.
+    """
+    tmpl = template if template is not None else _DEFAULT_SPLICE_TEMPLATE
+    return tmpl.format(
+        cancelled_prompt=cancelled_prompt or "",
+        cancelled_partial=cancelled_partial or "",
+        new_user_msg=new_user_msg or "",
     )

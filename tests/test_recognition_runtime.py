@@ -12,6 +12,7 @@ from core.recognition_runtime import (
     DEFAULT_HYDRATION_TIMEOUT,
     RecognitionResult,
     build_recognition_string,
+    build_splice_prompt,
     detect_entities,
     hydrate_l1,
     interrupt_first,
@@ -519,3 +520,102 @@ async def test_interrupt_first_calls_cancel_before_computing_recognition():
     assert order == ["cancel-done", "recognition-built"]
     if result.hydration is not None:
         result.hydration.close()
+
+
+# ---- Layer C: recommended_slot_id + build_splice_prompt --------------------
+
+
+def test_recognition_first_leaves_recommended_slot_id_none():
+    """Plain recognition has no in-flight slot to recommend."""
+    manifest = {"known_entities": []}
+    result = recognition_first("anything", manifest)
+    assert result.recommended_slot_id is None
+
+
+@pytest.mark.asyncio
+async def test_interrupt_first_populates_recommended_slot_id():
+    """Interrupt-first dispatches signal which slot the next stream should use."""
+    backend = _CancelTrackingBackend()
+    manifest = {"known_entities": [{"name": "Beta", "type": "project"}]}
+    result = await interrupt_first(
+        "tell me about Beta",
+        manifest,
+        backend=backend,
+        slot_to_cancel=2,
+    )
+    assert result.recommended_slot_id == 2
+    if result.hydration is not None:
+        result.hydration.close()
+
+
+@pytest.mark.asyncio
+async def test_interrupt_first_recommended_slot_id_matches_cancelled_slot():
+    """Whatever slot the caller cancelled is exactly what gets recommended back."""
+    backend = _CancelTrackingBackend()
+    manifest = {"known_entities": []}
+    for slot in [0, 1, 7, 99]:
+        result = await interrupt_first(
+            "anything",
+            manifest,
+            backend=backend,
+            slot_to_cancel=slot,
+        )
+        assert result.recommended_slot_id == slot
+
+
+def test_build_splice_prompt_default_template():
+    """Default template threads cancelled context + new request narratively."""
+    out = build_splice_prompt(
+        cancelled_prompt="Once upon a time, ",
+        cancelled_partial="in a land far away there ",
+        new_user_msg="actually, tell me about ILTT",
+    )
+    assert "Once upon a time" in out
+    assert "in a land far away" in out
+    assert "actually, tell me about ILTT" in out
+    assert "Interrupted at this point" in out
+
+
+def test_build_splice_prompt_handles_empty_partial():
+    """Cancel before the first token: cancelled_partial is empty; no crash."""
+    out = build_splice_prompt(
+        cancelled_prompt="explain something complex",
+        cancelled_partial="",
+        new_user_msg="never mind, what's ILTT",
+    )
+    assert "explain something complex" in out
+    assert "never mind, what's ILTT" in out
+
+
+def test_build_splice_prompt_handles_empty_cancelled_prompt():
+    """No prior context (e.g. WS first message interrupt): empty prompt is fine."""
+    out = build_splice_prompt(
+        cancelled_prompt="",
+        cancelled_partial="",
+        new_user_msg="hi there",
+    )
+    assert "hi there" in out
+
+
+def test_build_splice_prompt_custom_template():
+    """Caller can override with their own template string."""
+    custom = "PRIOR={cancelled_prompt}|GEN={cancelled_partial}|NEW={new_user_msg}"
+    out = build_splice_prompt(
+        cancelled_prompt="P",
+        cancelled_partial="G",
+        new_user_msg="N",
+        template=custom,
+    )
+    assert out == "PRIOR=P|GEN=G|NEW=N"
+
+
+def test_build_splice_prompt_handles_none_args_gracefully():
+    """Defensive: None inputs are coerced to empty strings."""
+    out = build_splice_prompt(
+        cancelled_prompt=None,  # type: ignore[arg-type]
+        cancelled_partial=None,  # type: ignore[arg-type]
+        new_user_msg=None,  # type: ignore[arg-type]
+    )
+    # Still returns a (mostly empty) formatted prompt; doesn't crash.
+    assert isinstance(out, str)
+    assert "Interrupted" in out
