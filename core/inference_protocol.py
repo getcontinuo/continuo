@@ -32,12 +32,9 @@ TGI sequence groups).
 
 from __future__ import annotations
 
-import logging
+from collections.abc import AsyncIterator, Iterable
 from dataclasses import dataclass
-from typing import AsyncIterator, Iterable, Optional, Protocol, runtime_checkable
-
-logger = logging.getLogger(__name__)
-
+from typing import Protocol, runtime_checkable
 
 # -- Errors --------------------------------------------------------------------
 
@@ -87,7 +84,7 @@ class Slot:
 
     id: int
     busy: bool
-    prompt_prefix_hash: Optional[str] = None
+    prompt_prefix_hash: str | None = None
 
 
 @dataclass(frozen=True)
@@ -184,7 +181,7 @@ class InferenceBackend(Protocol):
         self,
         prompt: str,
         *,
-        slot_id: Optional[int] = None,
+        slot_id: int | None = None,
     ) -> AsyncIterator[str]:
         """Yield tokens from the model, one at a time.
 
@@ -251,6 +248,11 @@ def register_backend(
         raise TypeError(
             f"{type(backend).__name__} does not implement InferenceBackend "
             "(missing one or more of: capabilities, slots, stream_completion, cancel)"
+        )
+    if isinstance(required_capabilities, str):
+        raise TypeError(
+            "required_capabilities must be an iterable of capability names, "
+            "not a bare string"
         )
     caps = backend.capabilities()
     required = set(required_capabilities)
