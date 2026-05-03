@@ -81,6 +81,64 @@ def test_detect_entities_skips_entities_without_string_name():
     assert matches[0]["name"] == "RealOne"
 
 
+def test_detect_entities_no_substring_false_positive():
+    """Short entity names should not match when embedded in longer words.
+
+    Regression: with the old substring matcher, 'bananas' matched 'NAS'.
+    Token-based matching: 'NAS' must appear as its own token to match.
+    """
+    manifest = {"known_entities": [{"name": "NAS", "type": "project"}]}
+    assert detect_entities("the bananas are ripe", manifest) == []
+    assert detect_entities("set up the NAS today", manifest) != []
+
+
+def test_detect_entities_handles_punctuation_and_slashes():
+    """Punctuation in entity names is treated as token separators on both sides."""
+    manifest = {
+        "known_entities": [{"name": "DINOs Chess/Checkers", "type": "project"}]
+    }
+    # Full phrase, written as in the entity name -- punctuation differs but
+    # tokens align.
+    assert detect_entities("how is DINOs Chess/Checkers doing", manifest) != []
+    assert detect_entities("dinos chess checkers status", manifest) != []
+    # Single token from a multi-token entity should NOT match without alias
+    assert detect_entities("just talking about checkers", manifest) == []
+
+
+def test_detect_entities_alias_matches_when_full_name_does_not():
+    """Aliases let multi-word entities respond to shorter user forms."""
+    manifest = {
+        "known_entities": [
+            {
+                "name": "DINOs Chess/Checkers",
+                "aliases": ["checkers"],
+                "type": "project",
+            }
+        ]
+    }
+    assert detect_entities("checkers status?", manifest) != []
+
+
+def test_detect_entities_token_match_requires_contiguous_run():
+    """Tokens of the candidate must appear *contiguous* in the message,
+    not interleaved with unrelated words."""
+    manifest = {
+        "known_entities": [{"name": "Capova Connect", "type": "project"}]
+    }
+    # Same tokens, contiguous → match
+    assert detect_entities("how's Capova Connect doing", manifest) != []
+    # Tokens present but split by other words → NO match (partial intent)
+    assert detect_entities("Capova ships and Connect comes later", manifest) == []
+
+
+def test_detect_entities_empty_user_message():
+    """Empty / whitespace / punctuation-only messages: no matches; no crash."""
+    manifest = {"known_entities": [{"name": "Anything"}]}
+    assert detect_entities("", manifest) == []
+    assert detect_entities("   ", manifest) == []
+    assert detect_entities("!@#$%", manifest) == []
+
+
 # ---- build_recognition_string ----------------------------------------------
 
 

@@ -43,6 +43,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Awaitable, Optional
@@ -84,18 +85,48 @@ class RecognitionResult:
 # -- Entity detection (mirrors core.orchestrator but reads a manifest) --------
 
 
+_TOKEN_RE = re.compile(r"[a-zA-Z0-9]+")
+
+
+def _tokenize(s: str) -> list[str]:
+    """Lowercase alphanumeric tokens. Punctuation and whitespace are split-points."""
+    return [m.group(0).lower() for m in _TOKEN_RE.finditer(s)]
+
+
+def _contains_token_subsequence(haystack: list[str], needle: list[str]) -> bool:
+    """Return True iff ``needle`` appears as a contiguous run within ``haystack``."""
+    if not needle or len(needle) > len(haystack):
+        return False
+    n = len(needle)
+    for i in range(len(haystack) - n + 1):
+        if haystack[i : i + n] == needle:
+            return True
+    return False
+
+
 def detect_entities(user_msg: str, manifest: dict) -> list[dict]:
     """
     Find entities from the manifest's known_entities mentioned in user_msg.
 
-    Case-insensitive substring match on entity name + aliases. Same shape as
-    core/orchestrator.py's detect_entities, but operates on a manifest dict
-    instead of a flat keyword list (so it can read aliases and surface the
-    full entity for downstream use).
+    Matching is case-insensitive and operates on **tokenized** runs of
+    alphanumeric characters -- punctuation and whitespace are treated as
+    separators. The candidate (entity name or alias) must appear as a
+    contiguous token subsequence within the user message.
+
+    Why token-based rather than substring-based: substring matching had
+    short-name false-positives ("ba**NAS**" matched a "NAS" entity, "**ILTT**ed"
+    would match "ILTT" inside any longer word, etc.). Tokenizing and
+    requiring contiguous-token alignment avoids that without restricting
+    multi-word entity names. Aliases remain the right tool for shorter
+    forms: an entity called "DINOs Chess/Checkers" with alias "checkers"
+    will match a user message of "checkers" *only* via the alias, never
+    via partial-name match.
     """
     if not isinstance(manifest, dict):
         return []
-    msg_lower = user_msg.lower()
+    msg_tokens = _tokenize(user_msg)
+    if not msg_tokens:
+        return []
     matches: list[dict] = []
     for entity in manifest.get("known_entities") or []:
         if not isinstance(entity, dict):
@@ -108,8 +139,11 @@ def detect_entities(user_msg: str, manifest: dict) -> list[dict]:
         for alias in aliases:
             if isinstance(alias, str):
                 candidates.append(alias)
-        if any(c and c.lower() in msg_lower for c in candidates):
-            matches.append(entity)
+        for c in candidates:
+            cand_tokens = _tokenize(c)
+            if cand_tokens and _contains_token_subsequence(msg_tokens, cand_tokens):
+                matches.append(entity)
+                break  # don't double-count an entity matched by name + alias
     return matches
 
 
