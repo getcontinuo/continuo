@@ -12,25 +12,29 @@ This isn't retrieval-augmented generation. This is **recognition-augmented cogni
 
 ---
 
-## 🚀 v0.0.7 — Recognition Runtime + Temporal Validity + Role Narratives
+## 🚀 v0.0.8 — Backend-Neutral Inference Layer (Layer A)
 
-**Released 2026-04-22** · 250 tests passing · MIT licensed · [continuo.cloud](https://continuo.cloud) live
+**Released 2026-05-03** · 310 tests passing · MIT licensed · [continuo.cloud](https://continuo.cloud) live
 
 ### What's New
 
-🧠 **Recognition runtime — the headline behavior fix.** `core/recognition_runtime.py` ships the first concrete implementation of the recognition-first runtime: a synchronous template-based recognition string + a concurrent L1 hydration awaitable, with a ≤3-second timeout budget. **Never raises.** This is the behavior FINDINGS_JOURNAL flagged on 2026-04-19 — Continuo's "concurrent, not call-and-repeat" thesis is now actual code, not just a spec.
+🔌 **Backend-neutral inference Protocol — `core/inference_protocol.py`.** The contract every local-inference adapter implements: `capabilities()`, `slots()`, `stream_completion(prompt, *, slot_id)`, `cancel(slot_id)`. Plus `Slot` and `BackendCapabilities` value types and `register_backend()` with capability-gated registration that raises `BackendUnsupported` on missing requirements. Built so Continuo's recognition-first runtime can drive token streaming + mid-stream cancel + concurrent-slot routing without ever baking a specific backend into the runtime — Ollama, vLLM, TGI, transformers all drop in once they support the same primitives.
 
-⏰ **Temporal validity windows on entities.** Zep-Graphiti-inspired `valid_from` / `valid_to` ISO 8601 dates on L5 Entities, so federation queries can answer "what was active in Q1 2026?" — not just "what's in memory?"
+⚡ **`adapters/llama_cpp_backend.py` — first adapter.** Drives `llama-server` via SSE-streaming completion, slot enumeration with graceful degradation, and two-pronged cancel (stop-event + connection close so cancellation lands cleanly even when the upstream is mid-byte-read). Reports `streaming=True`, `cancel=True`, `concurrent_slots=N` (caller-supplied to match the `-np` flag), `kv_cache_reuse=True`. Hardened against malformed slot IDs (string/None/inf/bool), partial-failure parsing, and HTTP-error stop-event leaks. **Optional install**: `pip install 'continuo-memory[llama-cpp]'` — httpx is gated behind the extra; the Protocol itself is dependency-free.
 
-🎭 **Role narratives — `agent.role_narrative`.** A new optional L5 schema field that differentiates agents sharing the same `type` slug: Claude Code = manager, Codex = lead author, Cursor = debugger, Cline = throwaway, Clyde = general-purpose. Inspired by [Intrinsic Memory Agents](https://hf.co/papers/2508.08997). Both shipping adapters populate it; Clyde publisher does too.
+🛠️ **CI infrastructure fixes.** The `verify-memory-cycle` workflow had been failing on every PR since it was added — assumed `continuo-memory` was on PyPI (it's not yet) and asserted MCP-server fixtures that the bootstrap script didn't seed. Both bugs fixed: install from local checkout, seed agent-library fixtures in bootstrap. Test matrix CI now installs `[dev,llama-cpp]` so adapter tests collect.
 
-📤 **Generic Codex memory pipeline + first-class CLI.** `continuo codex export | build-context | eval` turns Codex's distilled memory into L5 federation output plus L0/L1 timing artifacts. Plus `continuo claude-code export` — a SessionEnd hook target that silently writes the manifest, never raises, exits 0 in all failure modes.
+🧹 **Protocol cleanup pass (Cursor agent-as-author).** Bare-string `required_capabilities="cancel"` would have silently iterated as `{'c','a','n','e','l'}` and reported a useless missing-capability error — now an explicit `TypeError`. Plus modernized typing: `Optional[X]` → `X | None`, `AsyncIterator` moved to `collections.abc`, unused `logger` import removed.
 
-📜 **`spec/POSITIONING.md`** stakes the recognition-first thesis publicly. **`spec/RELATED_WORK.md`** maps Continuo's vocabulary to Mem0, Zep, Letta, Cognee, Memora, SCS, Intrinsic Memory Agents, G-Memory, H-MEM, and the MCP roadmap.
+🧪 **310 tests passing** (was 250 at v0.0.7). 60 new tests for the inference Protocol + adapter + Cursor's hardening. Full matrix CI (Ubuntu/Windows/macOS × Python 3.10–3.12) green.
 
-🧪 **250 tests passing** — recognition runtime semantics, temporal validity round-trips, Codex eval pipeline, role narrative schema enforcement, end-to-end SessionEnd hook integration.
+### Authorship
 
-🌐 **Deployed at [continuo.cloud](https://continuo.cloud).**
+This release is the first to formally demonstrate the **agent-as-author + agent-as-reviewer** pattern from `CONTRIBUTORS.md`:
+
+- **Claude Opus 4.7 (1M context)** authored the Protocol contract, adapter, and CI workflow fix.
+- **Cursor Cloud Agent** reviewed both, caught real bugs in each (bare-string capability iteration; `_parse_slot()` raising and violating the never-raise contract; `stop_event` leak on HTTP error), and authored the cleanup + hardening commits.
+- All commits land under @ryandavispro1-cmyk's GitHub identity per the agent-as-author convention; agents are credited via `Co-authored-by:` trailers and PR descriptions.
 
 ### Get Started
 
@@ -45,7 +49,11 @@ pip install -e '.[server]'    # + L6 MCP federation server
 
 ## 📦 The Story So Far
 
-Seven releases — six in one day, then the headline-behavior fix a week later. Here's how the full memory stack came together:
+Eight releases. Six in one day (the foundational architecture), then the recognition-first runtime, then the backend-neutral inference layer:
+
+### v0.0.7 — Recognition Runtime + Temporal Validity + Role Narratives
+
+**The headline behavior fix.** `core/recognition_runtime.py` ships the first concrete implementation of the recognition-first runtime: synchronous template-based recognition string + concurrent L1 hydration awaitable, ≤3s timeout budget, never raises. Plus `agent.role_narrative` (differentiates agents sharing the same `type` slug — Inspired by [Intrinsic Memory Agents](https://hf.co/papers/2508.08997)). Plus temporal validity windows on entities (Zep-Graphiti-inspired `valid_from`/`valid_to`). Plus `continuo codex export | build-context | eval` and `continuo claude-code export` SessionEnd hook target. Plus `spec/POSITIONING.md` and `spec/RELATED_WORK.md`. **250 tests passing.** Deployed at [continuo.cloud](https://continuo.cloud).
 
 ### v0.0.6 — Codex Adapter + Atomic L5 Write
 
@@ -122,6 +130,6 @@ Cross-agent federation:
 
 ---
 
-> ⚠️ **Pre-Alpha (v0.0.7).** Not production-ready — but the architecture is real, the tests pass, the federation loop works end-to-end, and the recognition-first runtime is now implemented. Built in the open as a spec-and-reference-implementation for a convention we hope the ecosystem adopts.
+> ⚠️ **Pre-Alpha (v0.0.8).** Not production-ready — but the architecture is real, the tests pass, the federation loop works end-to-end, the recognition-first runtime is implemented, and the inference layer it drives is now backend-neutral. Built in the open as a spec-and-reference-implementation for a convention we hope the ecosystem adopts.
 >
 > *We used our minds to make minds that make our minds better.*
