@@ -102,3 +102,6 @@ select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "SIM"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+markers = [
+    "integration: live tests requiring an external service (e.g. llama-server). Skipped in CI by default; run locally with `pytest -m integration`.",
+]
