@@ -222,7 +222,10 @@ def _extract_files(value: dict[str, Any]) -> list[str]:
         candidate = value.get(key)
         if isinstance(candidate, list):
             files.extend(_strings_from_list(candidate))
-    for message in value.get("messages", []):
+    messages = value.get("messages")
+    if not isinstance(messages, list):
+        messages = []
+    for message in messages:
         if isinstance(message, dict):
             files.extend(_extract_files(message))
     return _dedupe(files)

@@ -12,11 +12,10 @@ import pytest
 from adapters.base import AdapterDiscoveryError, L5Manifest
 from adapters.cursor import AGENT_ID, AGENT_TYPE, CursorAdapter
 
-
 # ---- Helpers ----------------------------------------------------------------
 
 
-def _seed_state_db(path: Path, records: list[tuple[str, dict]]) -> None:
+def _seed_state_db(path: Path, records: list[tuple[str, object]]) -> None:
     """Seed a Cursor-shaped state.vscdb with synthetic ItemTable rows."""
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(path))
@@ -134,6 +133,31 @@ def test_export_l5_filters_by_since(tmp_path):
     manifest = adapter.export_l5(since=cutoff)
     dates = [s.date for s in manifest.recent_sessions]
     assert all(d >= "2026-01-01" for d in dates if d), dates
+
+
+def test_export_l5_ignores_null_messages(tmp_path):
+    cursor_dir = _make_cursor_dir(tmp_path)
+    db = cursor_dir / "state.vscdb"
+    _seed_state_db(
+        db,
+        [
+            (
+                "composer.null-messages",
+                {
+                    "workspacePath": "/p/null-messages",
+                    "title": "safe extraction",
+                    "messages": None,
+                    "lastUpdatedAt": "2026-04-30T00:00:00Z",
+                },
+            ),
+        ],
+    )
+
+    adapter = CursorAdapter(cursor_dir=cursor_dir)
+    manifest = adapter.export_l5()
+
+    assert len(manifest.recent_sessions) == 1
+    assert manifest.recent_sessions[0].key_actions == ["safe extraction"]
 
 
 # ---- export_sessions() ------------------------------------------------------
