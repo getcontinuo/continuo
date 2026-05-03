@@ -22,7 +22,7 @@ jobs:
         shell: pwsh
         run: |
           python -m pip install --upgrade pip
-          python -m pip install "continuo-memory[server]" pyyaml jsonschema
+          python -m pip install ".[server]" pyyaml jsonschema
 
       - name: Bootstrap memory directories
         shell: pwsh
