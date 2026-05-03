@@ -198,6 +198,18 @@ async def test_slots_returns_empty_list_on_malformed_slot_id(raw_id):
     assert await backend.slots() == []
 
 
+async def test_slots_returns_empty_list_on_infinite_slot_id():
+    def handler(request):
+        return httpx.Response(
+            200,
+            content=b'[{"id": 1e309, "is_processing": false}]',
+            headers={"content-type": "application/json"},
+        )
+
+    backend = _make_backend(handler)
+    assert await backend.slots() == []
+
+
 async def test_slots_sends_auth_header_when_api_key_set():
     captured: dict[str, str | None] = {}
 

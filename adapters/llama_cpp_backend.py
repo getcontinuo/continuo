@@ -159,7 +159,7 @@ class LlamaCppBackend:
                 continue
             try:
                 slots.append(self._parse_slot(raw_slot))
-            except (TypeError, ValueError) as exc:
+            except (TypeError, ValueError, OverflowError) as exc:
                 logger.warning("LlamaCppBackend.slots() failed to parse slot payload: %s", exc)
         return slots
 
