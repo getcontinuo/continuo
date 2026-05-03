@@ -48,6 +48,7 @@ from pathlib import Path
 from typing import Any, Awaitable, Optional
 
 from core.codex_context import filter_manifest_for_access
+from core.inference_protocol import InferenceBackend
 
 logger = logging.getLogger(__name__)
 
@@ -291,4 +292,88 @@ def recognition_first(
         recognition=recognition,
         matched_entities=matches,
         hydration=_hydration_with_timeout(),
+    )
+
+
+async def interrupt_first(
+    new_user_msg: str,
+    manifest: Any,
+    *,
+    backend: InferenceBackend,
+    slot_to_cancel: int,
+    l1_dir: Optional[Path] = None,
+    access_level: str = "team",
+    hydration_timeout: float = DEFAULT_HYDRATION_TIMEOUT,
+) -> RecognitionResult:
+    """
+    Cancel an in-flight generation and return a fresh recognition for a new
+    user message.
+
+    Symmetric companion to :func:`recognition_first` for the
+    speaker-still-talking case: the model is mid-generation on
+    ``slot_to_cancel`` and a new user message arrives. This primitive:
+
+      1. Cancels the in-flight generation on ``slot_to_cancel``
+         (best-effort, idempotent, never raises -- per the
+         ``InferenceBackend.cancel`` contract).
+      2. Computes recognition for the new message synchronously.
+      3. Sets up the parallel hydration awaitable for the new message.
+
+    The returned :class:`RecognitionResult` has the same shape as
+    ``recognition_first``'s, so the caller's downstream pattern is
+    identical: emit the recognition string, start a fresh
+    ``stream_completion`` for the new message, await hydration in
+    parallel.
+
+    KV-cache reuse: when the backend supports it (e.g. ``llama-server``
+    with ``cache_prompt: true``, which the bundled
+    ``LlamaCppBackend`` enables by default), the next
+    ``stream_completion`` call on the same slot will automatically reuse
+    any cached prefix that overlaps with the new prompt. No special
+    handling is required here; just pass ``slot_id=slot_to_cancel`` to
+    the next ``stream_completion`` call.
+
+    Why this is its own primitive rather than ``await backend.cancel(...);
+    return recognition_first(...)`` at the call site:
+
+      * **Names the operation.** "Interrupt first" is a first-class
+        primitive in the timing thesis, symmetric to "recognition first."
+        Downstream code expresses intent.
+      * **Locks the cancel-then-recognize order.** Recognizing first then
+        cancelling adds milliseconds to the recognition emit; that's the
+        entire latency budget the thesis is built on. This wrapper makes
+        the right order the only order.
+      * **Provides a place to evolve sophistication.** Layer C may add
+        KV-cache splice (continue the slot's prompt rather than restart),
+        prompt merging (acknowledge the interrupted thread), or history
+        threading. Caller code that uses this primitive will not change
+        when those land.
+
+    Parameters
+    ----------
+    new_user_msg
+        The interrupting message.
+    manifest
+        L5 manifest (same shape as :func:`recognition_first`).
+    backend
+        The :class:`~core.inference_protocol.InferenceBackend` whose
+        generation is being interrupted. Used only for ``cancel``.
+    slot_to_cancel
+        Slot ID of the in-flight generation to stop. Caller is
+        responsible for tracking which slot belongs to this session.
+    l1_dir, access_level, hydration_timeout
+        Forwarded to :func:`recognition_first`.
+
+    Returns
+    -------
+    RecognitionResult
+        For the *new* message, identical in shape to ``recognition_first``'s.
+    """
+    await backend.cancel(slot_to_cancel)
+    return recognition_first(
+        new_user_msg,
+        manifest,
+        l1_dir=l1_dir,
+        access_level=access_level,
+        hydration_timeout=hydration_timeout,
     )
