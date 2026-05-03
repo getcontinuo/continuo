@@ -12,27 +12,27 @@ This isn't retrieval-augmented generation. This is **recognition-augmented cogni
 
 ---
 
-## 🚀 v0.0.9 — Layer A Validated + Layer B (`interrupt_first`)
+## 🚀 v0.0.10 — Cursor Adapter Graduates from cursor-spot
 
-**Released 2026-05-03** · 318 unit + 5 live integration tests passing · MIT licensed · [continuo.cloud](https://continuo.cloud) live
+**Released 2026-05-03** · 330 unit + 5 live integration tests passing · MIT licensed · [continuo.cloud](https://continuo.cloud) live
 
 ### What's New
 
-🎯 **Layer A validated end-to-end against real `llama-server`.** New `tests/integration/test_llama_cpp_live.py` exercises the adapter against an actual running server (gated behind a pytest `integration` marker; auto-skips when no server is reachable; `CONTINUO_LLAMA_URL` overrides the default `http://localhost:8080`). The big result: **`backend.cancel(slot_id)` actually stops generation within the 5-second budget on real hardware** — the interrupt-first contract is no longer theoretical. **Measured during this release's Clyde wire-up: recognition emitted in 0.0ms, first token from Gemma 27B Q6_K at ~1000ms.** Recognition runs a full second ahead of the model's first token; the concurrent timing thesis is now demonstrated as measured behavior on real hardware.
+🖱️ **Cursor adapter — `adapters/cursor.py`.** The deferred-to-v2 adapter from `DECISIONS.md` 2026-04-14 ("Cursor — opaque SQLite, needs reverse-engineering") graduates from the `cursor_continuo/` package in [`ryandavispro1-cmyk/cursor-spot`](https://github.com/ryandavispro1-cmyk/cursor-spot) into the canonical `getcontinuo/continuo` adapters directory. Reads Cursor's SQLite `state.vscdb` files at the platform-specific data directory (`~/.config/Cursor/` Linux, `~/Library/Application Support/Cursor/` macOS, `%APPDATA%\Cursor\` Windows), copies read-only to a tmp file before parsing so a running Cursor is undisturbed, and emits a normalized Continuo L5 manifest with project entities inferred from workspace paths. Visibility policy applied via `filter_for_federation` before manifest return. Registered under the standard `continuo.adapters` entry-point.
 
-⚡ **Layer B — `interrupt_first` primitive.** Symmetric companion to `recognition_first` for the speaker-still-talking case (`core/recognition_runtime.py`). The model is mid-generation, a new user message arrives; this primitive cancels the in-flight slot, then returns a fresh `RecognitionResult` shaped identically. Same downstream pattern as `recognition_first`. Locks the cancel-then-recognize order so recognition-emit latency is preserved (the entire latency budget the timing thesis is built on). KV-cache reuse flows automatically when the backend supports it (`LlamaCppBackend` does).
+📚 **`CONTRIBUTORS.md` — stacked-PR cursor[bot] caveat.** Documents the foot-gun we hit on 2026-05-03 between PRs #12 and #14: when a stacked PR's parent merges, `cursor[bot]` may auto-close the child and delete its head ref within seconds, dropping commits unique to the child. Includes recovery path (`git cherry-pick` from local object store while still fetched) and avoidance patterns.
 
-🩹 **Adapter hardening (Cursor agent-as-author).** Caught one more `httpx` exception type (`httpx.StreamClosed`) that the v0.0.8 hardening missed — could surface a clean cancellation as an unhandled exception to the consumer instead of returning gracefully. New regression test using `httpx.AsyncByteStream` to reproduce the timing.
+🩹 **Python 3.10 compatibility fix.** `datetime.UTC` is 3.11+; Continuo's pyproject targets 3.10+. Switched the new Cursor adapter to `datetime.timezone.utc` (available since 3.2) so the matrix CI passes on all three Python versions.
 
-🧪 **323 tests passing** (was 310 at v0.0.8) — 60 new tests across the inference Protocol, adapter, hardening, integration harness, and Layer B. The 5 integration tests run end-to-end against `llama-server` when one is reachable; they're skipped (port-knock) when not, so CI stays at 318 unit tests and contributors don't see spurious failures.
+🧪 **335 tests passing** (was 323 at v0.0.9) — 12 new tests for the Cursor adapter (discover/export_l5/export_sessions/health_check, with synthetic SQLite seeds and corrupt-bytes coverage of the never-raises contract).
 
 ### Authorship
 
-The agent-as-author + agent-as-reviewer pattern continues to pay off:
+The Cursor adapter completes the agent-as-author migration that started in v0.0.8:
 
-- **Claude Opus 4.7 (1M context)** authored the live integration test harness (#17) and Layer B's `interrupt_first` primitive (#18).
-- **Cursor Cloud Agent** authored the additional `httpx.StreamClosed` hardening (#16) as a follow-up review pass on v0.0.8's adapter.
-- Commits land under @ryandavispro1-cmyk per `CONTRIBUTORS.md`; agents credited via `Co-authored-by:` trailers.
+- **Cursor Cloud Agent** authored the SQLite extraction module (`adapters/_cursor_sqlite.py`), preserved verbatim from cursor-spot's original `cursor_continuo/sqlite_adapter.py`.
+- **Claude Opus 4.7 (1M context)** wrote the wrapping `CursorAdapter` class, the Continuo L5 schema mapping, and the test suite. Also fixed the 3.10 compat issue surfaced by CI.
+- The CONTRIBUTORS.md caveat note is by Claude.
 
 ### Get Started
 
@@ -47,7 +47,11 @@ pip install -e '.[server]'    # + L6 MCP federation server
 
 ## 📦 The Story So Far
 
-Nine releases. Six in one day (the foundational architecture), then the recognition-first runtime, then the backend-neutral inference layer, then end-to-end validation + Layer B:
+Ten releases. Six in one day (the foundational architecture), then the recognition-first runtime, then the backend-neutral inference layer, then end-to-end validation + Layer B, then the Cursor adapter graduation:
+
+### v0.0.9 — Layer A Validated + Layer B (`interrupt_first`)
+
+**Layer A goes from theoretical to measured.** New `tests/integration/test_llama_cpp_live.py` exercises the adapter against an actual running `llama-server`; cancel-mid-stream actually stops generation within budget. **Layer B / `interrupt_first`** is the symmetric speaker-still-talking primitive — mid-stream interrupt + new recognition + restart, with KV-cache reuse coming free from the underlying backend. Adapter gains another `httpx` exception (`StreamClosed`) in the cancel-aware clause (Cursor agent-as-author). Headline measurement on real hardware: recognition emitted in 0.0ms; Gemma 27B Q6_K's first token at ~1000ms; recognition runs a full second ahead. **323 tests passing.**
 
 ### v0.0.8 — Backend-Neutral Inference Layer (Layer A)
 
@@ -132,6 +136,6 @@ Cross-agent federation:
 
 ---
 
-> ⚠️ **Pre-Alpha (v0.0.9).** Not production-ready — but the architecture is real, the tests pass, the federation loop works end-to-end, the recognition-first runtime is implemented, the inference layer it drives is backend-neutral, and the timing thesis is now proven as measured behavior on real hardware (recognition emitted in 0ms; the model's first token a full second behind). Built in the open as a spec-and-reference-implementation for a convention we hope the ecosystem adopts.
+> ⚠️ **Pre-Alpha (v0.0.10).** Not production-ready — but the architecture is real, the tests pass, the federation loop works end-to-end, the recognition-first runtime is implemented, the inference layer it drives is backend-neutral, the timing thesis is proven as measured behavior on real hardware (recognition emitted in 0ms; the model's first token a full second behind), and the four headline IDE adapters (Claude Code, Codex, Cursor, native Clyde/Clair) are now all in tree. Built in the open as a spec-and-reference-implementation for a convention we hope the ecosystem adopts.
 >
 > *We used our minds to make minds that make our minds better.*
