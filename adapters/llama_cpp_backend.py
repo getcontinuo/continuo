@@ -213,6 +213,7 @@ class LlamaCppBackend:
                         if (
                             tracking_key is None
                             and isinstance(observed, int)
+                            and not isinstance(observed, bool)
                         ):
                             tracking_key = observed
                             self._active_responses[tracking_key] = resp

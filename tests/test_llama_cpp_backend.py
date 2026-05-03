@@ -356,6 +356,31 @@ async def test_stream_completion_sends_accept_event_stream_header():
     assert captured["accept"] == "text/event-stream"
 
 
+async def test_stream_completion_ignores_boolean_id_slot_values():
+    def handler(request):
+        return httpx.Response(
+            200,
+            content=_sse(
+                [
+                    {"content": "hello", "stop": False, "id_slot": True},
+                    {"content": "", "stop": True, "id_slot": True},
+                ]
+            ),
+        )
+
+    backend = _make_backend(handler)
+    sentinel_event = asyncio.Event()
+    sentinel_response = httpx.Response(204)
+    backend._stop_events[1] = sentinel_event
+    backend._active_responses[1] = sentinel_response
+
+    tokens = [t async for t in backend.stream_completion("test")]
+
+    assert tokens == ["hello"]
+    assert backend._stop_events == {1: sentinel_event}
+    assert backend._active_responses == {1: sentinel_response}
+
+
 async def test_stream_completion_cleans_stop_event_on_http_error():
     def handler(request):
         return httpx.Response(500, json={"error": "kaboom"})
