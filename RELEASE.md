@@ -12,17 +12,25 @@ This isn't retrieval-augmented generation. This is **recognition-augmented cogni
 
 ---
 
-## 🚀 v0.0.6 — Codex Adapter + Atomic L5 Write
+## 🚀 v0.0.7 — Recognition Runtime + Temporal Validity + Role Narratives
 
-**Released 2026-04-15** · 188 tests passing · MIT licensed
+**Released 2026-04-22** · 250 tests passing · MIT licensed · [continuo.cloud](https://continuo.cloud) live
 
 ### What's New
 
-🔌 **Codex adapter** — Continuo now reads OpenAI Codex CLI's memory natively. `adapters/codex.py` parses `~/.codex/session_index.jsonl` newest-first, resolves rollout files to extract working directories and timestamps, and deduplicates thread names into topic entities. Your Codex sessions are now first-class citizens in the federation.
+🧠 **Recognition runtime — the headline behavior fix.** `core/recognition_runtime.py` ships the first concrete implementation of the recognition-first runtime: a synchronous template-based recognition string + a concurrent L1 hydration awaitable, with a ≤3-second timeout budget. **Never raises.** This is the behavior FINDINGS_JOURNAL flagged on 2026-04-19 — Continuo's "concurrent, not call-and-repeat" thesis is now actual code, not just a spec.
 
-⚛️ **Atomic L5 writes** — `core/l5_io.py` introduces `write_l5()` / `write_l5_dict()` with tmp + rename semantics. The federation layer *never* sees a half-written manifest. Safe on POSIX and NTFS. No more race conditions between adapters writing and L6 reading.
+⏰ **Temporal validity windows on entities.** Zep-Graphiti-inspired `valid_from` / `valid_to` ISO 8601 dates on L5 Entities, so federation queries can answer "what was active in Q1 2026?" — not just "what's in memory?"
 
-🧪 **188 tests** — Session parsing, rollout resolution, timestamp normalization, entity dedupe, JSON Schema round-trip validation, and a full end-to-end test: Codex L5 manifest → `write_l5()` → `L6Store.find_entity()`. It works.
+🎭 **Role narratives — `agent.role_narrative`.** A new optional L5 schema field that differentiates agents sharing the same `type` slug: Claude Code = manager, Codex = lead author, Cursor = debugger, Cline = throwaway, Clyde = general-purpose. Inspired by [Intrinsic Memory Agents](https://hf.co/papers/2508.08997). Both shipping adapters populate it; Clyde publisher does too.
+
+📤 **Generic Codex memory pipeline + first-class CLI.** `continuo codex export | build-context | eval` turns Codex's distilled memory into L5 federation output plus L0/L1 timing artifacts. Plus `continuo claude-code export` — a SessionEnd hook target that silently writes the manifest, never raises, exits 0 in all failure modes.
+
+📜 **`spec/POSITIONING.md`** stakes the recognition-first thesis publicly. **`spec/RELATED_WORK.md`** maps Continuo's vocabulary to Mem0, Zep, Letta, Cognee, Memora, SCS, Intrinsic Memory Agents, G-Memory, H-MEM, and the MCP roadmap.
+
+🧪 **250 tests passing** — recognition runtime semantics, temporal validity round-trips, Codex eval pipeline, role narrative schema enforcement, end-to-end SessionEnd hook integration.
+
+🌐 **Deployed at [continuo.cloud](https://continuo.cloud).**
 
 ### Get Started
 
@@ -37,7 +45,11 @@ pip install -e '.[server]'    # + L6 MCP federation server
 
 ## 📦 The Story So Far
 
-Six releases in one day. Here's how the full memory stack came together:
+Seven releases — six in one day, then the headline-behavior fix a week later. Here's how the full memory stack came together:
+
+### v0.0.6 — Codex Adapter + Atomic L5 Write
+
+**OpenAI Codex joins the federation, and L5 writes are never observed half-written.** `adapters/codex.py` parses `~/.codex/session_index.jsonl` newest-first, resolves rollout files to extract working directories and timestamps, and dedupes thread names into topic entities. Registered under the `continuo.adapters` entry point. `core/l5_io.py` introduces `write_l5()` / `write_l5_dict()` with tmp + rename atomic semantics — safe on POSIX and NTFS, no more race conditions between adapters writing and L6 reading. **188 tests passing.**
 
 ### v0.0.5 — L6 Federation MCP Server *(the big one)*
 
@@ -110,6 +122,6 @@ Cross-agent federation:
 
 ---
 
-> ⚠️ **Pre-Alpha (v0.0.6).** Not production-ready — but the architecture is real, the tests pass, and the federation loop works end-to-end. Built in the open as a spec-and-reference-implementation for a convention we hope the ecosystem adopts.
+> ⚠️ **Pre-Alpha (v0.0.7).** Not production-ready — but the architecture is real, the tests pass, the federation loop works end-to-end, and the recognition-first runtime is now implemented. Built in the open as a spec-and-reference-implementation for a convention we hope the ecosystem adopts.
 >
 > *We used our minds to make minds that make our minds better.*
