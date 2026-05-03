@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -130,7 +130,7 @@ def test_export_l5_filters_by_since(tmp_path):
     )
 
     adapter = CursorAdapter(cursor_dir=cursor_dir)
-    cutoff = datetime(2026, 1, 1, tzinfo=UTC)
+    cutoff = datetime(2026, 1, 1, tzinfo=timezone.utc)
     manifest = adapter.export_l5(since=cutoff)
     dates = [s.date for s in manifest.recent_sessions]
     assert all(d >= "2026-01-01" for d in dates if d), dates
@@ -158,7 +158,7 @@ def test_export_sessions_respects_limit(tmp_path):
 
     adapter = CursorAdapter(cursor_dir=cursor_dir)
     sessions = adapter.export_sessions(
-        since=datetime(2020, 1, 1, tzinfo=UTC), limit=3
+        since=datetime(2020, 1, 1, tzinfo=timezone.utc), limit=3
     )
     assert len(sessions) == 3
 

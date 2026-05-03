@@ -29,7 +29,7 @@ Usage::
 from __future__ import annotations
 
 import logging
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -122,7 +122,7 @@ class CursorAdapter:
         """Return recent Cursor sessions newer than ``since``, capped at ``limit``."""
         memories = self._extract()
         out: list[Session] = []
-        since_iso = since.astimezone(UTC).date().isoformat()
+        since_iso = since.astimezone(timezone.utc).date().isoformat()
         for raw in memories.sessions:
             if raw.date and raw.date < since_iso:
                 continue
@@ -141,7 +141,7 @@ class CursorAdapter:
         memories = self._extract()
         sessions = [_to_session(s) for s in memories.sessions]
         if since is not None:
-            since_iso = since.astimezone(UTC).date().isoformat()
+            since_iso = since.astimezone(timezone.utc).date().isoformat()
             sessions = [s for s in sessions if not s.date or s.date >= since_iso]
 
         entities = [_to_entity(e) for e in memories.entities]
@@ -155,7 +155,7 @@ class CursorAdapter:
                 role_narrative=ROLE_NARRATIVE,
                 spec_version_compat=_SPEC_VERSION,
             ),
-            last_updated=datetime.now(UTC).isoformat(timespec="seconds"),
+            last_updated=datetime.now(timezone.utc).isoformat(timespec="seconds"),
             capabilities=["composer-history", "workspace-state"],
             recent_sessions=sessions,
             known_entities=visible_entities,

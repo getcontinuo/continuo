@@ -7,7 +7,7 @@ import shutil
 import sqlite3
 import tempfile
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -197,7 +197,7 @@ def _date_from_record(value: dict[str, Any]) -> str:
         parsed = _parse_date(candidate)
         if parsed:
             return parsed
-    return datetime.now(UTC).date().isoformat()
+    return datetime.now(timezone.utc).date().isoformat()
 
 
 def _parse_date(value: Any) -> str:
@@ -210,7 +210,7 @@ def _parse_date(value: Any) -> str:
     if isinstance(value, int | float):
         timestamp = value / 1000 if value > 10_000_000_000 else value
         try:
-            return datetime.fromtimestamp(timestamp, UTC).date().isoformat()
+            return datetime.fromtimestamp(timestamp, timezone.utc).date().isoformat()
         except (OverflowError, OSError, ValueError):
             return ""
     return ""
