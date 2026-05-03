@@ -12,29 +12,27 @@ This isn't retrieval-augmented generation. This is **recognition-augmented cogni
 
 ---
 
-## 🚀 v0.0.8 — Backend-Neutral Inference Layer (Layer A)
+## 🚀 v0.0.9 — Layer A Validated + Layer B (`interrupt_first`)
 
-**Released 2026-05-03** · 310 tests passing · MIT licensed · [continuo.cloud](https://continuo.cloud) live
+**Released 2026-05-03** · 318 unit + 5 live integration tests passing · MIT licensed · [continuo.cloud](https://continuo.cloud) live
 
 ### What's New
 
-🔌 **Backend-neutral inference Protocol — `core/inference_protocol.py`.** The contract every local-inference adapter implements: `capabilities()`, `slots()`, `stream_completion(prompt, *, slot_id)`, `cancel(slot_id)`. Plus `Slot` and `BackendCapabilities` value types and `register_backend()` with capability-gated registration that raises `BackendUnsupported` on missing requirements. Built so Continuo's recognition-first runtime can drive token streaming + mid-stream cancel + concurrent-slot routing without ever baking a specific backend into the runtime — Ollama, vLLM, TGI, transformers all drop in once they support the same primitives.
+🎯 **Layer A validated end-to-end against real `llama-server`.** New `tests/integration/test_llama_cpp_live.py` exercises the adapter against an actual running server (gated behind a pytest `integration` marker; auto-skips when no server is reachable; `CONTINUO_LLAMA_URL` overrides the default `http://localhost:8080`). The big result: **`backend.cancel(slot_id)` actually stops generation within the 5-second budget on real hardware** — the interrupt-first contract is no longer theoretical. **Measured during this release's Clyde wire-up: recognition emitted in 0.0ms, first token from Gemma 27B Q6_K at ~1000ms.** Recognition runs a full second ahead of the model's first token; the concurrent timing thesis is now demonstrated as measured behavior on real hardware.
 
-⚡ **`adapters/llama_cpp_backend.py` — first adapter.** Drives `llama-server` via SSE-streaming completion, slot enumeration with graceful degradation, and two-pronged cancel (stop-event + connection close so cancellation lands cleanly even when the upstream is mid-byte-read). Reports `streaming=True`, `cancel=True`, `concurrent_slots=N` (caller-supplied to match the `-np` flag), `kv_cache_reuse=True`. Hardened against malformed slot IDs (string/None/inf/bool), partial-failure parsing, and HTTP-error stop-event leaks. **Optional install**: `pip install 'continuo-memory[llama-cpp]'` — httpx is gated behind the extra; the Protocol itself is dependency-free.
+⚡ **Layer B — `interrupt_first` primitive.** Symmetric companion to `recognition_first` for the speaker-still-talking case (`core/recognition_runtime.py`). The model is mid-generation, a new user message arrives; this primitive cancels the in-flight slot, then returns a fresh `RecognitionResult` shaped identically. Same downstream pattern as `recognition_first`. Locks the cancel-then-recognize order so recognition-emit latency is preserved (the entire latency budget the timing thesis is built on). KV-cache reuse flows automatically when the backend supports it (`LlamaCppBackend` does).
 
-🛠️ **CI infrastructure fixes.** The `verify-memory-cycle` workflow had been failing on every PR since it was added — assumed `continuo-memory` was on PyPI (it's not yet) and asserted MCP-server fixtures that the bootstrap script didn't seed. Both bugs fixed: install from local checkout, seed agent-library fixtures in bootstrap. Test matrix CI now installs `[dev,llama-cpp]` so adapter tests collect.
+🩹 **Adapter hardening (Cursor agent-as-author).** Caught one more `httpx` exception type (`httpx.StreamClosed`) that the v0.0.8 hardening missed — could surface a clean cancellation as an unhandled exception to the consumer instead of returning gracefully. New regression test using `httpx.AsyncByteStream` to reproduce the timing.
 
-🧹 **Protocol cleanup pass (Cursor agent-as-author).** Bare-string `required_capabilities="cancel"` would have silently iterated as `{'c','a','n','e','l'}` and reported a useless missing-capability error — now an explicit `TypeError`. Plus modernized typing: `Optional[X]` → `X | None`, `AsyncIterator` moved to `collections.abc`, unused `logger` import removed.
-
-🧪 **310 tests passing** (was 250 at v0.0.7). 60 new tests for the inference Protocol + adapter + Cursor's hardening. Full matrix CI (Ubuntu/Windows/macOS × Python 3.10–3.12) green.
+🧪 **323 tests passing** (was 310 at v0.0.8) — 60 new tests across the inference Protocol, adapter, hardening, integration harness, and Layer B. The 5 integration tests run end-to-end against `llama-server` when one is reachable; they're skipped (port-knock) when not, so CI stays at 318 unit tests and contributors don't see spurious failures.
 
 ### Authorship
 
-This release is the first to formally demonstrate the **agent-as-author + agent-as-reviewer** pattern from `CONTRIBUTORS.md`:
+The agent-as-author + agent-as-reviewer pattern continues to pay off:
 
-- **Claude Opus 4.7 (1M context)** authored the Protocol contract, adapter, and CI workflow fix.
-- **Cursor Cloud Agent** reviewed both, caught real bugs in each (bare-string capability iteration; `_parse_slot()` raising and violating the never-raise contract; `stop_event` leak on HTTP error), and authored the cleanup + hardening commits.
-- All commits land under @ryandavispro1-cmyk's GitHub identity per the agent-as-author convention; agents are credited via `Co-authored-by:` trailers and PR descriptions.
+- **Claude Opus 4.7 (1M context)** authored the live integration test harness (#17) and Layer B's `interrupt_first` primitive (#18).
+- **Cursor Cloud Agent** authored the additional `httpx.StreamClosed` hardening (#16) as a follow-up review pass on v0.0.8's adapter.
+- Commits land under @ryandavispro1-cmyk per `CONTRIBUTORS.md`; agents credited via `Co-authored-by:` trailers.
 
 ### Get Started
 
@@ -49,7 +47,11 @@ pip install -e '.[server]'    # + L6 MCP federation server
 
 ## 📦 The Story So Far
 
-Eight releases. Six in one day (the foundational architecture), then the recognition-first runtime, then the backend-neutral inference layer:
+Nine releases. Six in one day (the foundational architecture), then the recognition-first runtime, then the backend-neutral inference layer, then end-to-end validation + Layer B:
+
+### v0.0.8 — Backend-Neutral Inference Layer (Layer A)
+
+**The contract that makes Continuo's runtime backend-agnostic.** `core/inference_protocol.py` defines `InferenceBackend` as a `@runtime_checkable Protocol` with four methods: `capabilities()`, `slots()`, `stream_completion()`, `cancel()`. `adapters/llama_cpp_backend.py` implements it against `llama-server` SSE — first concrete adapter; httpx is gated behind the `[llama-cpp]` extra so the Protocol surface stays dependency-free. `register_backend()` checks capability requirements at registration time so missing primitives raise `BackendUnsupported` loudly rather than silently degrading. First release to formally exercise the agent-as-author + agent-as-reviewer pattern: Claude authored, Cursor reviewed and hardened. **310 tests passing.**
 
 ### v0.0.7 — Recognition Runtime + Temporal Validity + Role Narratives
 
@@ -130,6 +132,6 @@ Cross-agent federation:
 
 ---
 
-> ⚠️ **Pre-Alpha (v0.0.8).** Not production-ready — but the architecture is real, the tests pass, the federation loop works end-to-end, the recognition-first runtime is implemented, and the inference layer it drives is now backend-neutral. Built in the open as a spec-and-reference-implementation for a convention we hope the ecosystem adopts.
+> ⚠️ **Pre-Alpha (v0.0.9).** Not production-ready — but the architecture is real, the tests pass, the federation loop works end-to-end, the recognition-first runtime is implemented, the inference layer it drives is backend-neutral, and the timing thesis is now proven as measured behavior on real hardware (recognition emitted in 0ms; the model's first token a full second behind). Built in the open as a spec-and-reference-implementation for a convention we hope the ecosystem adopts.
 >
 > *We used our minds to make minds that make our minds better.*
