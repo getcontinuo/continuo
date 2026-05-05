@@ -113,7 +113,7 @@ def test_doctor_checks_native_exit_codes_after_short_index_preflight_steps() -> 
     migrate_guard = re.compile(
         r'& \$pythonCmd "scripts/migrate_short_index\.py".*?\n'
         r'if \(\$LASTEXITCODE -ne 0\) \{\n'
-        r'\s+throw "migrate_short_index\.py failed with exit code \$LASTEXITCODE"\n'
+        r'\s+throw "migrate_short_index\.py --check failed with exit code \$LASTEXITCODE"\n'
         r"\}",
         re.DOTALL,
     )
