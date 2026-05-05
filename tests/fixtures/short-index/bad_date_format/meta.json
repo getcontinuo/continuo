@@ -1,0 +1,7 @@
+{
+  "description": "Invalid last_updated format should fail validation.",
+  "expectCheckExit": 1,
+  "runMigrateWrite": false,
+  "expectValidateExit": 1,
+  "expectExportExit": 1
+}

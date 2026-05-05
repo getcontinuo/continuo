@@ -1,0 +1,8 @@
+{
+  "description": "Legacy topics/aliases/access payload must fail check, then pass after migration.",
+  "expectCheckExit": 1,
+  "runMigrateWrite": true,
+  "expectValidateExit": 0,
+  "expectExportExit": 0,
+  "expectedKnownEntities": 1
+}

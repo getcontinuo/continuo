@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "topic_key": "continuo_mcp",
+      "topic_name": "Continuo MCP",
+      "summary": "Date is intentionally malformed.",
+      "triggers": [
+        "continuo mcp"
+      ],
+      "scope": "workspace",
+      "access_level": "team",
+      "last_updated": "05/01/2026"
+    }
+  ]
+}

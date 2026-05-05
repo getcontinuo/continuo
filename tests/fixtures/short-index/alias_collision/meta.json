@@ -1,0 +1,7 @@
+{
+  "description": "Alias collisions across topic keys should fail validation.",
+  "expectCheckExit": 1,
+  "runMigrateWrite": false,
+  "expectValidateExit": 1,
+  "expectExportExit": 1
+}

@@ -1,0 +1,8 @@
+{
+  "description": "Workspace overlap should win over global during strict precedence export.",
+  "expectCheckExit": 1,
+  "runMigrateWrite": false,
+  "expectValidateExit": 0,
+  "expectExportExit": 0,
+  "expectedKnownEntities": 1
+}
