@@ -6,8 +6,22 @@ $ErrorActionPreference = "Stop"
 
 Write-Host "Bootstrapping Continuo MCP integration..."
 
-python -m pip install --upgrade pip
-python -m pip install ".[server]" pyyaml jsonschema
+function Resolve-Python {
+    $python = Get-Command python -ErrorAction SilentlyContinue
+    if ($python) {
+        return $python.Path
+    }
+    $py = Get-Command py -ErrorAction SilentlyContinue
+    if ($py) {
+        return $py.Path
+    }
+    throw "Python is required but was not found in PATH."
+}
+
+$pythonCmd = Resolve-Python
+
+& $pythonCmd -m pip install --upgrade pip
+& $pythonCmd -m pip install ".[server]" pyyaml jsonschema
 
 $workspaceMemory = Join-Path $WorkspaceRoot ".cursor\memory"
 $workspaceTopics = Join-Path $workspaceMemory "topics"
@@ -149,5 +163,8 @@ if ($didSeedWorkspaceFixtures) {
     }
     Write-Host "Seeded workspace smoke-test fixtures for Continuo MCP and Keyword Retrieval."
 }
+
+& $pythonCmd "scripts/migrate_short_index.py" --workspace-root $WorkspaceRoot
+& $pythonCmd "scripts/validate_short_index.py" --workspace-root $WorkspaceRoot
 
 Write-Host "Bootstrap complete."

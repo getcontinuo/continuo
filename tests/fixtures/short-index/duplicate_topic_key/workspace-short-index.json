@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "topic_key": "continuo_mcp",
+      "topic_name": "Continuo MCP",
+      "summary": "First entry.",
+      "triggers": [
+        "continuo a"
+      ],
+      "scope": "workspace",
+      "access_level": "team",
+      "last_updated": "2026-05-01"
+    },
+    {
+      "topic_key": "continuo_mcp",
+      "topic_name": "Continuo MCP Duplicate",
+      "summary": "Second duplicate entry.",
+      "triggers": [
+        "continuo b"
+      ],
+      "scope": "workspace",
+      "access_level": "team",
+      "last_updated": "2026-05-01"
+    }
+  ]
+}

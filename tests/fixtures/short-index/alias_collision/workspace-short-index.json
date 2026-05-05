@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "topic_key": "continuo_mcp",
+      "topic_name": "Continuo MCP",
+      "summary": "First entity with shared alias.",
+      "triggers": [
+        "shared alias"
+      ],
+      "scope": "workspace",
+      "access_level": "team",
+      "last_updated": "2026-05-01"
+    },
+    {
+      "topic_key": "keyword_retrieval",
+      "topic_name": "Keyword Retrieval",
+      "summary": "Second entity with same alias.",
+      "triggers": [
+        "shared alias"
+      ],
+      "scope": "workspace",
+      "access_level": "team",
+      "last_updated": "2026-05-01"
+    }
+  ]
+}

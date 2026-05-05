@@ -29,6 +29,17 @@ jobs:
         run: |
           powershell -ExecutionPolicy Bypass -File scripts/bootstrap-continuo-mcp.ps1 -WorkspaceRoot "."
 
+      - name: Enforce canonical short-index schema (CI check only)
+        shell: pwsh
+        run: |
+          python scripts/migrate_short_index.py --workspace-root "." --check
+          python scripts/validate_short_index.py --workspace-root "."
+
+      - name: Run short-index regression matrix
+        shell: pwsh
+        run: |
+          powershell -ExecutionPolicy Bypass -File scripts/regression_matrix.ps1 -WorkspaceRoot "."
+
       - name: Run memory cycle
         shell: pwsh
         run: |

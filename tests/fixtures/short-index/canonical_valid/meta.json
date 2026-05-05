@@ -1,0 +1,8 @@
+{
+  "description": "Canonical entries payload should pass check/validate/export.",
+  "expectCheckExit": 0,
+  "runMigrateWrite": false,
+  "expectValidateExit": 0,
+  "expectExportExit": 0,
+  "expectedKnownEntities": 1
+}

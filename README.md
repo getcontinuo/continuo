@@ -114,6 +114,38 @@ Docs:
 - [`docs/getting-started-memory-cycle.md`](docs/getting-started-memory-cycle.md)
 - [`docs/good-first-issues.md`](docs/good-first-issues.md)
 
+## Hybrid Memory Tooling
+
+Helper scripts:
+
+- `scripts/bootstrap-continuo-mcp.ps1`
+- `scripts/doctor.ps1`
+- `scripts/migrate_short_index.py`
+- `scripts/validate_short_index.py`
+- `scripts/build_continuo_l5.py`
+- `scripts/mcp_smoke_test.py`
+- `scripts/regression_matrix.ps1`
+- `scripts/run_memory_cycle.ps1`
+
+CI guardrails:
+
+- `python scripts/migrate_short_index.py --workspace-root "." --check`
+- `python scripts/validate_short_index.py --workspace-root "."`
+- `powershell -ExecutionPolicy Bypass -File scripts/regression_matrix.ps1 -WorkspaceRoot "."`
+
+If CI fails on migration `--check`, run local migration and commit normalized files:
+
+```powershell
+python scripts/migrate_short_index.py --workspace-root "."
+python scripts/validate_short_index.py --workspace-root "."
+```
+
+Run one-command preflight before full cycle:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/doctor.ps1 -WorkspaceRoot "." -InstallMissingDeps -RunRegressionMatrix
+```
+
 ## Roadmap
 
 - **v0.0.1** (now) — Scaffold + Phase 1 orchestrator (L0 + L1, manual files, Ollama-compatible)
