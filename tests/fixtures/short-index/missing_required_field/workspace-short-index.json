@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "topic_key": "continuo_mcp",
+      "summary": "Missing topic_name on purpose.",
+      "triggers": [
+        "continuo mcp"
+      ],
+      "scope": "workspace",
+      "access_level": "team",
+      "last_updated": "2026-05-01"
+    }
+  ]
+}

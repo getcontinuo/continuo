@@ -1,0 +1,7 @@
+{
+  "description": "Canonical payload missing required field should fail validation.",
+  "expectCheckExit": 0,
+  "runMigrateWrite": false,
+  "expectValidateExit": 1,
+  "expectExportExit": 1
+}

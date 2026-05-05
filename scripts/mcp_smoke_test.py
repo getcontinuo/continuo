@@ -5,6 +5,7 @@ import argparse
 import asyncio
 import json
 from pathlib import Path
+import sys
 from typing import Any
 
 from mcp import ClientSession
@@ -22,6 +23,11 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--assertions", action="store_true")
     parser.add_argument("--json-report", default="")
+    parser.add_argument(
+        "--server-python",
+        default=sys.executable,
+        help="Python executable used to launch the Continuo L6 server.",
+    )
     return parser.parse_args()
 
 
@@ -45,7 +51,7 @@ async def _run(args: argparse.Namespace) -> int:
         "payloads": {},
     }
     server = StdioServerParameters(
-        command="python",
+        command=str(args.server_python),
         args=[
             "-m",
             "core.l6_server",

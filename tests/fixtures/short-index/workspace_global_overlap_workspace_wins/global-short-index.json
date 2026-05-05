@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "topic_key": "continuo_mcp",
+      "topic_name": "Continuo MCP",
+      "summary": "Global summary should be overridden.",
+      "triggers": [
+        "continuo",
+        "legacy continuo"
+      ],
+      "scope": "global",
+      "access_level": "team",
+      "last_updated": "2026-04-30"
+    }
+  ]
+}

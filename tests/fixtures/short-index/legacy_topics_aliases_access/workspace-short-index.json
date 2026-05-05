@@ -1,0 +1,15 @@
+{
+  "topics": [
+    {
+      "topic_key": "keyword_retrieval",
+      "summary": "Alias-driven retrieval flow for short and long memory chains.",
+      "aliases": [
+        "keyword retrieval",
+        "memory recall"
+      ],
+      "scope": "workspace",
+      "access": "team",
+      "last_updated": "2026-05-01"
+    }
+  ]
+}

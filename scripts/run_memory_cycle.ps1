@@ -6,7 +6,21 @@ Param(
 
 $ErrorActionPreference = "Stop"
 
-Write-Host "Running memory cycle: merge -> export -> MCP smoke assertions"
+function Resolve-Python {
+    $python = Get-Command python -ErrorAction SilentlyContinue
+    if ($python) {
+        return $python.Path
+    }
+    $py = Get-Command py -ErrorAction SilentlyContinue
+    if ($py) {
+        return $py.Path
+    }
+    throw "Python launcher not found. Install Python and ensure 'python' or 'py' is available in PATH."
+}
+
+$pythonCmd = Resolve-Python
+
+Write-Host "Running memory cycle: migrate -> validate -> export -> MCP smoke assertions"
 
 $reportPath = Join-Path $WorkspaceRoot $ReportDir
 New-Item -ItemType Directory -Path $reportPath -Force | Out-Null
@@ -24,11 +38,19 @@ if ($SchemaPath -and (Test-Path $SchemaPath)) {
     $builderArgs += @("--schema-path", $SchemaPath)
 }
 
-python @builderArgs
+& $pythonCmd "scripts/migrate_short_index.py" --workspace-root $WorkspaceRoot
+if ($LASTEXITCODE -ne 0) {
+    throw "migrate_short_index.py failed with exit code $LASTEXITCODE"
+}
+& $pythonCmd "scripts/validate_short_index.py" --workspace-root $WorkspaceRoot
+if ($LASTEXITCODE -ne 0) {
+    throw "validate_short_index.py failed with exit code $LASTEXITCODE"
+}
+& $pythonCmd @builderArgs
 if ($LASTEXITCODE -ne 0) {
     throw "build_continuo_l5.py failed with exit code $LASTEXITCODE"
 }
-python "scripts/mcp_smoke_test.py" --assertions --json-report $mcpReport
+& $pythonCmd "scripts/mcp_smoke_test.py" --assertions --json-report $mcpReport --server-python $pythonCmd
 if ($LASTEXITCODE -ne 0) {
     throw "mcp_smoke_test.py failed with exit code $LASTEXITCODE"
 }
