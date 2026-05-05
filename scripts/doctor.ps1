@@ -88,11 +88,20 @@ if ($missingModules.Count -gt 0) {
 }
 
 & $pythonCmd "scripts/migrate_short_index.py" --workspace-root $workspaceRootResolved --check
+if ($LASTEXITCODE -ne 0) {
+    throw "migrate_short_index.py --check failed with exit code $LASTEXITCODE"
+}
 & $pythonCmd "scripts/validate_short_index.py" --workspace-root $workspaceRootResolved
+if ($LASTEXITCODE -ne 0) {
+    throw "validate_short_index.py failed with exit code $LASTEXITCODE"
+}
 
 $regressionStatus = "skipped"
 if ($RunRegressionMatrix.IsPresent) {
     powershell -ExecutionPolicy Bypass -File "scripts/regression_matrix.ps1" -WorkspaceRoot $workspaceRootResolved
+    if ($LASTEXITCODE -ne 0) {
+        throw "regression_matrix.ps1 failed with exit code $LASTEXITCODE"
+    }
     $regressionStatus = "passed"
 }
 

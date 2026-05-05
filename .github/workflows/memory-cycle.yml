@@ -33,7 +33,9 @@ jobs:
         shell: pwsh
         run: |
           python scripts/migrate_short_index.py --workspace-root "." --check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python scripts/validate_short_index.py --workspace-root "."
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Run short-index regression matrix
         shell: pwsh

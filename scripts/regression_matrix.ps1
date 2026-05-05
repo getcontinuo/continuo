@@ -21,10 +21,21 @@ function Resolve-Python {
 function Invoke-PythonStep {
     param(
         [string]$PythonCmd,
-        [string[]]$Args
+        [string[]]$Arguments
     )
-    & $PythonCmd @Args | Out-Host
-    return $LASTEXITCODE
+    $output = & $PythonCmd @Arguments 2>&1
+    $exitCode = $LASTEXITCODE
+    if ($output) {
+        $output | ForEach-Object {
+            if ($_ -is [System.Management.Automation.ErrorRecord]) {
+                Write-Host $_.ToString()
+            }
+            else {
+                Write-Host $_
+            }
+        }
+    }
+    return $exitCode
 }
 
 function Ensure-ParentDirectory {
@@ -117,7 +128,7 @@ foreach ($caseDir in $caseDirs) {
         $expectedKnownEntities = [int]$meta.expectedKnownEntities
     }
 
-    $checkExit = Invoke-PythonStep -PythonCmd $pythonCmd -Args @(
+    $checkExit = Invoke-PythonStep -PythonCmd $pythonCmd -Arguments @(
         $migrateScript,
         "--workspace-root", $tempWorkspaceRoot,
         "--path", $workspaceIndex,
@@ -127,7 +138,7 @@ foreach ($caseDir in $caseDirs) {
 
     $migrateWriteExit = $null
     if ($runMigrateWrite) {
-        $migrateWriteExit = Invoke-PythonStep -PythonCmd $pythonCmd -Args @(
+        $migrateWriteExit = Invoke-PythonStep -PythonCmd $pythonCmd -Arguments @(
             $migrateScript,
             "--workspace-root", $tempWorkspaceRoot,
             "--path", $workspaceIndex,
@@ -135,7 +146,7 @@ foreach ($caseDir in $caseDirs) {
         )
     }
 
-    $validateExit = Invoke-PythonStep -PythonCmd $pythonCmd -Args @(
+    $validateExit = Invoke-PythonStep -PythonCmd $pythonCmd -Arguments @(
         $validateScript,
         "--workspace-root", $tempWorkspaceRoot,
         "--path", $workspaceIndex,
@@ -145,7 +156,7 @@ foreach ($caseDir in $caseDirs) {
     $exportExit = $null
     $knownEntities = $null
     if ($validateExit -eq 0) {
-        $exportExit = Invoke-PythonStep -PythonCmd $pythonCmd -Args @(
+        $exportExit = Invoke-PythonStep -PythonCmd $pythonCmd -Arguments @(
             $buildScript,
             "--workspace-root", $tempWorkspaceRoot,
             "--global-root", $tempGlobalRoot,
@@ -157,8 +168,18 @@ foreach ($caseDir in $caseDirs) {
         )
 
         if ($exportExit -eq 0 -and $null -ne $expectedKnownEntities) {
-            $knownEntitiesRaw = & $pythonCmd -c "import sys, yaml; data = yaml.safe_load(open(sys.argv[1], encoding='utf-8')); print(len(data.get('known_entities', [])))" $workspaceOut
-            $knownEntities = [int]($knownEntitiesRaw | Select-Object -Last 1)
+            if (Test-Path $workspaceOut) {
+                $knownEntitiesRaw = & $pythonCmd -c "import sys, yaml; data = yaml.safe_load(open(sys.argv[1], encoding='utf-8')); print(len(data.get('known_entities', [])))" $workspaceOut
+                if ($LASTEXITCODE -eq 0) {
+                    $knownEntities = [int]($knownEntitiesRaw | Select-Object -Last 1)
+                }
+                else {
+                    Write-Host "Failed to parse known_entities count for case '$caseName'."
+                }
+            }
+            else {
+                Write-Host "Expected export artifact missing for case '$caseName': $workspaceOut"
+            }
         }
     }
 
