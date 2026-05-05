@@ -63,7 +63,29 @@ def _load_payload(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
+def _uses_legacy_schema(payload: Any) -> bool:
+    if isinstance(payload, list):
+        return True
+    if not isinstance(payload, dict):
+        return False
+    if "topics" in payload:
+        return True
+
+    entries = payload.get("entries")
+    if not isinstance(entries, list):
+        return False
+
+    for entry in entries:
+        if isinstance(entry, dict) and ("aliases" in entry or "access" in entry):
+            return True
+
+    return False
+
+
 def _to_canonical_payload(payload: Any, default_scope: str) -> dict[str, Any]:
+    if isinstance(payload, dict) and isinstance(payload.get("entries"), list) and not _uses_legacy_schema(payload):
+        return payload
+
     if isinstance(payload, dict):
         raw_entries = payload.get("entries")
         if not isinstance(raw_entries, list):
