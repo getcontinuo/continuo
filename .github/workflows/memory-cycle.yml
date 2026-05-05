@@ -40,7 +40,7 @@ jobs:
       - name: Run short-index regression matrix
         shell: pwsh
         run: |
-          powershell -ExecutionPolicy Bypass -File scripts/regression_matrix.ps1 -WorkspaceRoot "."
+          python scripts/regression_matrix.py --workspace-root "."
 
       - name: Run memory cycle
         shell: pwsh

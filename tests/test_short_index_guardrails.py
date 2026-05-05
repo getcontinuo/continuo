@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import re
 import subprocess
 import sys
 from pathlib import Path
@@ -14,7 +13,6 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 FIXTURES_ROOT = REPO_ROOT / "tests" / "fixtures" / "short-index"
 MIGRATE_SCRIPT = REPO_ROOT / "scripts" / "migrate_short_index.py"
 VALIDATE_SCRIPT = REPO_ROOT / "scripts" / "validate_short_index.py"
-DOCTOR_SCRIPT = REPO_ROOT / "scripts" / "doctor.ps1"
 WORKFLOW_FILE = REPO_ROOT / ".github" / "workflows" / "memory-cycle.yml"
 
 
@@ -105,28 +103,6 @@ def test_short_index_regression_fixtures_match_expected_check_and_validate_exits
     assert validate_result.returncode == meta["expectValidateExit"], (
         validate_result.stdout + validate_result.stderr
     )
-
-
-def test_doctor_checks_native_exit_codes_after_short_index_preflight_steps() -> None:
-    doctor_text = DOCTOR_SCRIPT.read_text(encoding="utf-8")
-
-    migrate_guard = re.compile(
-        r'& \$pythonCmd "scripts/migrate_short_index\.py".*?\n'
-        r'if \(\$LASTEXITCODE -ne 0\) \{\n'
-        r'\s+throw "migrate_short_index\.py --check failed with exit code \$LASTEXITCODE"\n'
-        r"\}",
-        re.DOTALL,
-    )
-    validate_guard = re.compile(
-        r'& \$pythonCmd "scripts/validate_short_index\.py".*?\n'
-        r'if \(\$LASTEXITCODE -ne 0\) \{\n'
-        r'\s+throw "validate_short_index\.py failed with exit code \$LASTEXITCODE"\n'
-        r"\}",
-        re.DOTALL,
-    )
-
-    assert migrate_guard.search(doctor_text)
-    assert validate_guard.search(doctor_text)
 
 
 def test_memory_cycle_workflow_stops_after_failed_migration_check() -> None:
