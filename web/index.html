@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Continuo &mdash; recognition-first memory for AI agents</title>
-  <meta name="description" content="Continuo is the first AI memory framework that treats runtime interaction timing as a first-class problem. Recognition first, hydration second, archive descent third.">
+  <title>Bourdon &mdash; recognition-first memory for AI agents</title>
+  <meta name="description" content="Bourdon is the first AI memory framework that treats runtime interaction timing as a first-class problem. Recognition first, hydration second, archive descent third.">
   <meta name="theme-color" content="#1f3a52">
 
   <!-- Open Graph -->
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Continuo &mdash; recognition-first memory for AI agents">
-  <meta property="og:description" content="Every agent-memory framework optimizes for retrieval. Continuo is the first that optimizes for runtime timing.">
-  <meta property="og:url" content="https://continuo.cloud">
-  <meta property="og:site_name" content="Continuo">
+  <meta property="og:title" content="Bourdon &mdash; recognition-first memory for AI agents">
+  <meta property="og:description" content="Every agent-memory framework optimizes for retrieval. Bourdon is the first that optimizes for runtime timing.">
+  <meta property="og:url" content="https://bourdon.ai">
+  <meta property="og:site_name" content="Bourdon">
 
   <link rel="stylesheet" href="/style.css">
 </head>
@@ -20,7 +20,7 @@
   <main>
     <header class="hero">
       <p class="eyebrow">A memory framework for AI agents</p>
-      <h1>Continuo</h1>
+      <h1>Bourdon</h1>
       <p class="tagline">Recognition first. Hydration second. Archive descent third.</p>
     </header>
 
@@ -30,7 +30,7 @@
         Every memory framework for AI agents &mdash; Mem0, Zep, Letta, Cognee, the
         academic literature &mdash; optimizes for the same problem:
         <em>better retrieval.</em> Persisting facts. Retrieving the right ones.
-        Structuring them as graphs, embeddings, hybrid stores. Continuo is the first
+        Structuring them as graphs, embeddings, hybrid stores. Bourdon is the first
         to optimize for a different problem: the moment-by-moment shape of the
         response. The <em>felt experience</em> of memory at conversation rhythm. The
         difference between &ldquo;the AI sounds like it knows me&rdquo; and &ldquo;the
@@ -64,7 +64,7 @@ ai: replies.         ai: replies.</pre>
         A retrieve-then-respond architecture forces all three steps into a serial
         pipeline. Recognition can&rsquo;t happen until retrieval finishes. That
         serial pipeline is what makes today&rsquo;s memory-enabled agents still
-        feel like databases that talk. Continuo&rsquo;s job is to put the steps
+        feel like databases that talk. Bourdon&rsquo;s job is to put the steps
         back in the right time-shape.
       </p>
     </section>
@@ -72,7 +72,7 @@ ai: replies.         ai: replies.</pre>
     <section>
       <h2>The OMNIvour test</h2>
       <p>
-        On 2026-04-19 we wired a Codex session into a fully-populated Continuo
+        On 2026-04-19 we wired a Codex session into a fully-populated Bourdon
         federation and asked: <em>&ldquo;What do you know about OMNIvour?&rdquo;</em>
         The data layer worked perfectly. Codex correctly retrieved the project
         summary, milestones, recent activity. But the <em>shape</em> of the response
@@ -83,13 +83,16 @@ ai: replies.         ai: replies.</pre>
       <p>
         That gap &mdash; data right, behavior wrong &mdash; is the product. We logged
         it as a real product finding rather than user preference noise, and built
-        Continuo&rsquo;s tiered runtime to address it directly. The first concrete
-        implementation, <code>core/recognition_runtime.py</code>, ships now.
+        Bourdon&rsquo;s tiered runtime to address it directly. The recognition-first
+        runtime now ships as <code>core/recognition_runtime.py</code>, and the
+        full three-layer stack (recognition, interrupt-first, KV-cache splice)
+        is wired into a live agent and measured at <strong>0ms recognition vs
+        ~406ms first token</strong> on Gemma 3 27B Q4_K_M.
       </p>
     </section>
 
     <section>
-      <h2>How Continuo differs</h2>
+      <h2>How Bourdon differs</h2>
       <table>
         <thead>
           <tr><th>Framework</th><th>What it optimizes</th><th>What it leaves open</th></tr>
@@ -100,12 +103,12 @@ ai: replies.         ai: replies.</pre>
           <tr><td>Letta</td><td>Editable memory blocks, stateful runtime</td><td>Runtime interaction shape</td></tr>
           <tr><td>Cognee</td><td>Doc &rarr; KG construction</td><td>Runtime interaction shape</td></tr>
           <tr><td>Memora (Microsoft, 2026)</td><td>Abstraction + cue-anchor representation</td><td>Runtime interaction shape</td></tr>
-          <tr><td><strong>Continuo</strong></td><td><strong>Runtime interaction shape: recognition &rarr; hydration &rarr; archive descent</strong></td><td>Less mature on representation, no compliance posture, no managed cloud &mdash; by choice</td></tr>
+          <tr><td><strong>Bourdon</strong></td><td><strong>Runtime interaction shape: recognition &rarr; hydration &rarr; archive descent</strong></td><td>Less mature on representation, no compliance posture, no managed cloud &mdash; by choice</td></tr>
         </tbody>
       </table>
       <p class="note">
-        Continuo isn&rsquo;t competing with these tools. It complements them.
-        A Continuo timing layer can sit on top of Mem0&rsquo;s store, Zep&rsquo;s
+        Bourdon isn&rsquo;t competing with these tools. It complements them.
+        A Bourdon timing layer can sit on top of Mem0&rsquo;s store, Zep&rsquo;s
         temporal graph, or Letta&rsquo;s memory blocks and make any of them feel
         more like a mind.
       </p>
@@ -119,7 +122,7 @@ ai: replies.         ai: replies.</pre>
       <ul>
         <li>
           <strong>The runtime ships and the agent still feels like lookup.</strong>
-          If Continuo-equipped agents fail the recognition-first feel test
+          If Bourdon-equipped agents fail the recognition-first feel test
           (target: 8/10 subjective on a 5-session run), the architecture is
           wrong &mdash; not just the implementation.
         </li>
@@ -141,33 +144,43 @@ ai: replies.         ai: replies.</pre>
     <section>
       <h2>Status</h2>
       <p>
-        Pre-alpha. <strong>v0.0.7</strong>, MIT-licensed, public on GitHub.
-        244 tests passing across orchestrator, adapters, federation server,
-        and recognition runtime. Two shipping adapters (Claude Code, Codex),
-        one native publisher (Clyde). The recognition-first runtime exists
-        as a Python module today; wiring it into a live agent&rsquo;s response
-        loop is the next-cycle empirical test.
+        Pre-alpha. <strong>v0.1.0</strong>, MIT-licensed, public on GitHub.
+        351 tests passing across orchestrator, adapters, federation server,
+        recognition runtime, and the three runtime layers (Layer A backend-neutral
+        inference protocol, Layer B interrupt-first symmetric primitive, Layer C
+        KV-cache-aware splice). Three shipping IDE adapters (Claude Code, Codex,
+        Cursor) plus native publishers for Clyde and Clair. The recognition-first
+        runtime is wired into a live agent and measured end-to-end.
+      </p>
+      <p class="note">
+        Renamed from <em>Continuo</em> to <em>Bourdon</em> on 2026-05-05.
+        See the <a href="https://github.com/getbourdon/bourdon/releases/tag/v0.1.0">v0.1.0
+        release notes</a> for migration. Old URLs auto-redirect.
       </p>
       <p class="links">
-        <a href="https://github.com/getcontinuo/continuo">GitHub</a>
+        <a href="https://github.com/getbourdon/bourdon">GitHub</a>
         &middot;
-        <a href="https://github.com/getcontinuo/continuo/blob/main/spec/POSITIONING.md">Positioning</a>
+        <a href="https://github.com/getbourdon/bourdon/blob/main/spec/POSITIONING.md">Positioning</a>
         &middot;
-        <a href="https://github.com/getcontinuo/continuo/blob/main/spec/THESIS.md">Thesis</a>
+        <a href="https://github.com/getbourdon/bourdon/blob/main/spec/THESIS.md">Thesis</a>
         &middot;
-        <a href="https://github.com/getcontinuo/continuo/blob/main/spec/RELATED_WORK.md">Related work</a>
+        <a href="https://github.com/getbourdon/bourdon/blob/main/spec/RELATED_WORK.md">Related work</a>
         &middot;
-        <a href="https://github.com/getcontinuo/continuo/blob/main/spec/FINDINGS_JOURNAL.md">Findings journal</a>
+        <a href="https://github.com/getbourdon/bourdon/blob/main/spec/FINDINGS_JOURNAL.md">Findings journal</a>
       </p>
     </section>
 
     <footer>
       <p>
-        Continuo is built in public by <a href="https://github.com/RADLABtech">RADLAB LLC</a>
+        Bourdon is built in public by <a href="https://github.com/getbourdon">RADLAB LLC</a>
         and the broader open-source community. Designed with Ry Davis. Co-authored
-        with Claude (Anthropic) and Codex (OpenAI). Contributors welcome
+        with Claude (Anthropic), Codex (OpenAI), and Cursor. Contributors welcome
         &mdash; especially adapters for new agents and integrations into
         live response loops.
+      </p>
+      <p class="meta">
+        Named for the <em>bourdon</em> &mdash; the deep continuous drone of a pipe
+        organ, the foundational tone that holds every other voice in place.
       </p>
       <p class="meta">MIT licensed. No tracking. No JavaScript. No web fonts. Just text.</p>
     </footer>

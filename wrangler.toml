@@ -25,8 +25,8 @@ workers_dev = true
 directory = "./web"
 not_found_handling = "single-page-application"
 
-# Custom domain binding -- bourdon.ai is now on Cloudflare nameservers
-# (bob.ns.cloudflare.com + diva.ns.cloudflare.com, verified 2026-04-27),
+# Custom domain binding -- bourdon.ai is on Cloudflare nameservers
+# (clint.ns.cloudflare.com + hope.ns.cloudflare.com, verified 2026-05-06),
 # so wrangler can bind it directly via this routes block.
 [[routes]]
 pattern = "bourdon.ai"
