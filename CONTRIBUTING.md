@@ -1,6 +1,6 @@
 # Contributing to Bourdon
 
-Bourdon is free (MIT) and in pre-alpha. Contributions welcome — especially adapters for agents and frameworks not yet covered.
+Bourdon is source-available under the Business Source License 1.1 (BSL) and in pre-alpha. Free for solo developers, internal/non-competing commercial use, research, and education; auto-converts to Apache 2.0 four years after each version is published. See [`LICENSE_FAQ.md`](LICENSE_FAQ.md) for plain-English guidance. Contributions welcome — especially adapters for agents and frameworks not yet covered.
 
 ## Current Status
 
@@ -93,4 +93,4 @@ Be excellent to each other. If something needs formalizing later we will, but fo
 
 ## License
 
-All contributions are MIT-licensed under the project's terms. By submitting a PR you agree to license your contribution accordingly.
+All contributions are licensed under the Business Source License 1.1, with copyright assigned to RADLAB LLC. By submitting a PR you agree to license your contribution accordingly. This allows RADLAB LLC to maintain unified copyright over the codebase, which is required for offering commercial licenses to organizations whose use exceeds the BSL Additional Use Grant.
