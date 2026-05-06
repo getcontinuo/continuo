@@ -59,4 +59,4 @@ This entry exists because future agents working in stacked configurations need t
 
 ## License
 
-All contributions -- including agent-assisted ones -- are MIT-licensed under the project's terms. By submitting a PR you agree to license your contribution accordingly. The human submitter is responsible for ensuring the agent's output is licensable under MIT.
+All contributions -- including agent-assisted ones -- are licensed under the Business Source License 1.1 (BSL) with copyright assigned to RADLAB LLC. By submitting a PR you agree to license your contribution accordingly. The human submitter is responsible for ensuring the agent's output is licensable under BSL 1.1 and that copyright can be assigned to RADLAB LLC. This allows the project to maintain unified copyright, which is required for offering commercial licenses to organizations whose use exceeds the BSL Additional Use Grant.

@@ -175,7 +175,7 @@ See [`spec/USE_CASES.md`](spec/USE_CASES.md) for eight worked domain scenarios b
 
 ## Contributing
 
-Bourdon is free (MIT) and welcomes contributions — especially adapters for new agents and frameworks. See [`CONTRIBUTING.md`](CONTRIBUTING.md).
+Bourdon is source-available under the Business Source License 1.1 (auto-converts to Apache 2.0 after four years per version). Free for solo developers, internal/non-competing commercial use, research, and education. Commercial license required for hosted-service offerings that compete with RADLAB LLC's paid versions. See [`LICENSE`](LICENSE) for the legal text and [`LICENSE_FAQ.md`](LICENSE_FAQ.md) for plain-English guidance. Contributions welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## About
 
@@ -199,4 +199,6 @@ Because you found us here, you might like to check out:
 
 ## License
 
-MIT. See [`LICENSE`](LICENSE).
+Business Source License 1.1, auto-converts to Apache License 2.0 four years after each version is published. See [`LICENSE`](LICENSE) for the full text and [`LICENSE_FAQ.md`](LICENSE_FAQ.md) for guidance on what's permitted. Commercial licensing inquiries: licensing@radlab.online.
+
+Versions v0.0.1 through v0.1.0 were published under MIT and remain MIT in their distributed form. Relicensing to BSL 1.1 applies from v0.2.0 onward.

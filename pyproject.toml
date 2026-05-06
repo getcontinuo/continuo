@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bourdon"
-version = "0.0.12"
+version = "0.2.0"
 description = "Cross-agent memory federation for human-AI collaboration"
 readme = "README.md"
-license = { text = "MIT" }
+license = { text = "BUSL-1.1" }
 requires-python = ">=3.10"
 authors = [
     { name = "Ryan Davis", email = "ryandavispro1@gmail.com" },
@@ -28,7 +28,7 @@ keywords = [
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
+    "License :: Other/Proprietary License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
