@@ -1,6 +1,6 @@
-# Contributing to Continuo
+# Contributing to Bourdon
 
-Continuo is free (MIT) and in pre-alpha. Contributions welcome — especially adapters for agents and frameworks not yet covered.
+Bourdon is free (MIT) and in pre-alpha. Contributions welcome — especially adapters for agents and frameworks not yet covered.
 
 ## Current Status
 
@@ -18,7 +18,7 @@ v0.0.1 scaffold. Phase 1 reference orchestrator (L0 + L1) is working standalone.
 ## Types of Contributions
 
 ### Adapters (most wanted)
-Continuo's value scales linearly with the number of agents/tools it can federate. An adapter reads a native agent's memory store and emits a normalized L5 manifest. See [`adapters/`](adapters/) for examples (once implemented) and the adapter contract spec in `spec/ADAPTER_CONTRACT.md` (coming in v0.1.0).
+Bourdon's value scales linearly with the number of agents/tools it can federate. An adapter reads a native agent's memory store and emits a normalized L5 manifest. See [`adapters/`](adapters/) for examples (once implemented) and the adapter contract spec in `spec/ADAPTER_CONTRACT.md` (coming in v0.1.0).
 
 Specifically wanted:
 - Cursor adapter (SQLite schema reverse-engineering) — v0 in progress at [`ryandavispro1-cmyk/cursor-spot`](https://github.com/ryandavispro1-cmyk/cursor-spot); will upstream once stable.
@@ -43,8 +43,8 @@ Specifically wanted:
 ## Development Setup
 
 ```bash
-git clone https://github.com/getcontinuo/continuo
-cd continuo
+git clone https://github.com/getbourdon/bourdon
+cd bourdon
 
 # Python 3.10+ required
 python -m venv .venv
@@ -59,7 +59,7 @@ pip install -e .[dev]
 For contributors working on L5/L6 federation and retrieval ergonomics, use the memory-cycle scripts:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/bootstrap-continuo-mcp.ps1 -WorkspaceRoot "."
+powershell -ExecutionPolicy Bypass -File scripts/bootstrap-bourdon-mcp.ps1 -WorkspaceRoot "."
 powershell -ExecutionPolicy Bypass -File scripts/run_memory_cycle.ps1 -WorkspaceRoot "." -SchemaPath ".\spec\L5_schema.json"
 ```
 

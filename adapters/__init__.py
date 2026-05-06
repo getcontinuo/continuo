@@ -1,9 +1,9 @@
 """
-Continuo adapters -- normalize native agent memory into L5 manifests.
+Bourdon adapters -- normalize native agent memory into L5 manifests.
 
-An adapter implements the ContinuoAdapter Protocol defined in adapters.base.
+An adapter implements the BourdonAdapter Protocol defined in adapters.base.
 Adapters are registered via Python entry points in pyproject.toml under the
-`continuo.adapters` group.
+`bourdon.adapters` group.
 
 First-party adapters shipped in v0.0.x:
     - claude_code  -- Claude Code (reads claude-brain + auto-memory + MCP graph)
@@ -21,7 +21,7 @@ from adapters.base import (
     AdapterVersionMismatchError,
     AgentInfo,
     AgentStore,
-    ContinuoAdapter,
+    BourdonAdapter,
     Entity,
     HealthStatus,
     L5Manifest,
@@ -37,7 +37,7 @@ __all__ = [
     "AdapterVersionMismatchError",
     "AgentInfo",
     "AgentStore",
-    "ContinuoAdapter",
+    "BourdonAdapter",
     "Entity",
     "HealthStatus",
     "L5Manifest",

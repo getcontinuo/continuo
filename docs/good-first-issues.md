@@ -10,7 +10,7 @@ These are intentionally scoped for new contributors.
 
 ## Exporter validation
 
-1. Add unit tests for alias collision detection in `scripts/build_continuo_l5.py`.
+1. Add unit tests for alias collision detection in `scripts/build_bourdon_l5.py`.
 2. Add unit tests for workspace-over-global precedence assertion.
 3. Add fixtures for invalid date/access-level payloads.
 
@@ -18,7 +18,7 @@ These are intentionally scoped for new contributors.
 
 1. Add optional `--json` compact stdout mode.
 2. Add test case for expected failure when required tool is missing.
-3. Add support for custom topics beyond `Continuo MCP` and `Keyword Retrieval`.
+3. Add support for custom topics beyond `Bourdon MCP` and `Keyword Retrieval`.
 
 ## Starter template
 

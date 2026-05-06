@@ -1,4 +1,4 @@
-"""Top-level `continuo` CLI."""
+"""Top-level `bourdon` CLI."""
 
 from __future__ import annotations
 
@@ -268,7 +268,7 @@ def _handle_claude_code_export(args: argparse.Namespace) -> int:
       Add to ~/.claude/settings.json:
         "hooks": {
           "SessionEnd": [
-            { "command": "continuo claude-code export" }
+            { "command": "bourdon claude-code export" }
           ]
         }
 
@@ -282,7 +282,7 @@ def _handle_claude_code_export(args: argparse.Namespace) -> int:
     except Exception as exc:  # noqa: BLE001 -- hook contract: never raises
         if args.verbose:
             print(
-                f"continuo claude-code export: adapter init failed: {exc}",
+                f"bourdon claude-code export: adapter init failed: {exc}",
                 file=sys.stderr,
             )
         return 0
@@ -292,14 +292,14 @@ def _handle_claude_code_export(args: argparse.Namespace) -> int:
     except AdapterDiscoveryError as exc:
         if args.verbose:
             print(
-                f"continuo claude-code export: no Claude Code memory sources found ({exc}), skipping",
+                f"bourdon claude-code export: no Claude Code memory sources found ({exc}), skipping",
                 file=sys.stderr,
             )
         return 0
     except Exception as exc:  # noqa: BLE001 -- hook contract
         if args.verbose:
             print(
-                f"continuo claude-code export: export failed: {exc}",
+                f"bourdon claude-code export: export failed: {exc}",
                 file=sys.stderr,
             )
         return 0
@@ -312,7 +312,7 @@ def _handle_claude_code_export(args: argparse.Namespace) -> int:
     except Exception as exc:  # noqa: BLE001 -- hook contract
         if args.verbose:
             print(
-                f"continuo claude-code export: write to {out_path} failed: {exc}",
+                f"bourdon claude-code export: write to {out_path} failed: {exc}",
                 file=sys.stderr,
             )
         return 0
@@ -321,7 +321,7 @@ def _handle_claude_code_export(args: argparse.Namespace) -> int:
         _print_yaml(data)
     elif args.verbose:
         print(
-            f"continuo claude-code export: wrote {out_path}",
+            f"bourdon claude-code export: wrote {out_path}",
             file=sys.stderr,
         )
     return 0
@@ -329,8 +329,8 @@ def _handle_claude_code_export(args: argparse.Namespace) -> int:
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="continuo",
-        description="Continuo CLI",
+        prog="bourdon",
+        description="Bourdon CLI",
     )
     subparsers = parser.add_subparsers(dest="command")
 

@@ -1,5 +1,5 @@
 """
-Continuo L6 -- Federation Library Store.
+Bourdon L6 -- Federation Library Store.
 
 L6 is the cross-agent federation layer. It aggregates L5 manifests from all
 installed agents (Claude Code, Codex, Clyde, etc.) and provides query

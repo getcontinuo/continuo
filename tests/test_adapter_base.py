@@ -9,7 +9,7 @@ import pytest
 from adapters.base import (
     AgentInfo,
     AgentStore,
-    ContinuoAdapter,
+    BourdonAdapter,
     Entity,
     HealthStatus,
     L5Manifest,
@@ -263,11 +263,11 @@ class _MinimalAdapter:
 
 
 def test_minimal_adapter_satisfies_protocol():
-    assert isinstance(_MinimalAdapter(), ContinuoAdapter)
+    assert isinstance(_MinimalAdapter(), BourdonAdapter)
 
 
 def test_broken_adapter_fails_protocol():
     class NotAnAdapter:
         pass
 
-    assert not isinstance(NotAnAdapter(), ContinuoAdapter)
+    assert not isinstance(NotAnAdapter(), BourdonAdapter)

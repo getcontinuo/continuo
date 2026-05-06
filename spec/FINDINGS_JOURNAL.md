@@ -1,6 +1,6 @@
 # Findings Journal
 
-This journal records live findings from Continuo implementation and testing.
+This journal records live findings from Bourdon implementation and testing.
 It is intended to capture the gap between what the system can technically
 retrieve and how naturally it behaves in the first moments of interaction.
 
@@ -9,15 +9,15 @@ retrieve and how naturally it behaves in the first moments of interaction.
 ## 2026-04-19 - Codex Recognition-First Gap
 
 ### Context
-- Objective: test whether the Codex-specific Continuo integration produces
+- Objective: test whether the Codex-specific Bourdon integration produces
   recognition-first behavior, not just better retrieval.
-- Systems: Codex adapter, `continuo codex eval --live`, live `~/.codex`
+- Systems: Codex adapter, `bourdon codex eval --live`, live `~/.codex`
   ingestion, explicit `claude-brain` overlay ingest.
 - Constraint: the first response needs to feel like human recognition while
   deeper context hydrates in parallel.
 
 ### Timeline
-- Generic Codex Continuo integration was implemented, verified, committed, and
+- Generic Codex Bourdon integration was implemented, verified, committed, and
   pushed.
 - Live eval against real Codex memory was tightened until project extraction
   became sane and obvious garbage entities were removed.
@@ -27,7 +27,7 @@ retrieve and how naturally it behaves in the first moments of interaction.
   about OMNIvour?`
 - Codex responded too much like a retrieval system: it searched first, then
   answered from gathered notes.
-- User clarified the intended NeuroLayer/Continuo behavior:
+- User clarified the intended NeuroLayer/Bourdon behavior:
   first-layer keyword recognition should support an immediate natural response,
   while deeper layers hydrate project summaries, dates, milestones, and archived
   history in the background.
@@ -38,7 +38,7 @@ retrieve and how naturally it behaves in the first moments of interaction.
   Impact: runtime behavior now becomes a first-class workstream, not just data
   ingestion quality.
 - Decision: distinguish `data-layer success` from `behavior-layer success`.
-  Rationale: Continuo can ingest and structure memory correctly while still
+  Rationale: Bourdon can ingest and structure memory correctly while still
   feeling like lookup.
   Impact: future eval must score both context quality and response timing style.
 - Decision: record recognition failures as journal artifacts.
@@ -48,7 +48,7 @@ retrieve and how naturally it behaves in the first moments of interaction.
 
 ### Actions
 - Owner: Codex
-  Action: create a recognition-first runtime path for Codex Continuo.
+  Action: create a recognition-first runtime path for Codex Bourdon.
   Status: next
 - Owner: Codex
   Action: add an L0 entity alias map so names like `OMNIVour`, `Prun`, and
@@ -103,7 +103,7 @@ retrieve and how naturally it behaves in the first moments of interaction.
 - The system may continue to optimize for retrieval quality while missing the
   human-interface timing problem the thesis is actually about.
   Note: this is the primary failure mode to watch, because it would let
-  Continuo become a better database without becoming a more natural interface.
+  Bourdon become a better database without becoming a more natural interface.
 - Overfitting project extraction without a recognition runtime could create a
   stronger database that still feels clunky in use.
   Note: this is a good near-term warning sign for implementation work. Better
@@ -151,7 +151,7 @@ retrieve and how naturally it behaves in the first moments of interaction.
 ## 2026-04-22 - Role Narrative + Landscape Sweep
 
 ### Context
-- Resumed Continuo work after a brief gap. Goal: review the project, sweep the
+- Resumed Bourdon work after a brief gap. Goal: review the project, sweep the
   agent-memory field for new findings, and formulate a small adoption plan.
 - Picked the smallest plan item first: add `agent.role_narrative` to L5.
 
@@ -187,7 +187,7 @@ retrieve and how naturally it behaves in the first moments of interaction.
   Impact: shipping role_narrative today, leaving abstraction/cue work as
   an open candidate for v0.1.x.
 - Decision: do not rebuild as a knowledge graph (Cognee / Zep direction).
-  Rationale: Continuo's wedge is timing, not representation richness.
+  Rationale: Bourdon's wedge is timing, not representation richness.
   Adding graph engine = scope blowup with no thesis payoff.
 - Decision: stay aligned with MCP 2026 roadmap on terminology + governance,
   but do not preemptively implement DPoP / Workload Identity Federation.
@@ -269,8 +269,8 @@ retrieve and how naturally it behaves in the first moments of interaction.
   Memory Agents, G-Memory, H-MEM). Companion to POSITIONING.md
   (commit 17e2d9f) which stakes the claim; this document maps it.
 
-#### #a -- continuo claude-code export (SessionEnd hook target)
-- Commit `65b3ba5`. New CLI subcommand `continuo claude-code export`.
+#### #a -- bourdon claude-code export (SessionEnd hook target)
+- Commit `65b3ba5`. New CLI subcommand `bourdon claude-code export`.
   Designed for Claude Code SessionEnd hook use: silent on success,
   never raises, exits 0 in all observable failure modes. Default
   output path is `~/agent-library/agents/claude-code.l5.yaml`. Wire-
@@ -280,7 +280,7 @@ retrieve and how naturally it behaves in the first moments of interaction.
   {
     "hooks": {
       "SessionEnd": [
-        { "command": "continuo claude-code export" }
+        { "command": "bourdon claude-code export" }
       ]
     }
   }
@@ -359,7 +359,7 @@ retrieve and how naturally it behaves in the first moments of interaction.
   documents arrive.
   Status: open -- the runtime exists, the wiring doesn't.
 - Owner: Future cycle
-  Action: build `continuo codex eval --recognition` mode that scores
+  Action: build `bourdon codex eval --recognition` mode that scores
   response *shape* + *latency*, not just entity correctness.
   Status: open.
 - Owner: Future cycle
@@ -369,7 +369,7 @@ retrieve and how naturally it behaves in the first moments of interaction.
   Status: deferred -- evidence-driven, not speculative.
 
 ### Today's totals
-- Continuo: 5 commits (POSITIONING, temporal validity, RELATED_WORK,
+- Bourdon: 5 commits (POSITIONING, temporal validity, RELATED_WORK,
   auto-fire, recognition runtime)
 - Tests: 219 -> 244 passing (+25 in recognition runtime)
 - Plan items closed: 2, 5, a, 4 (the four that came out of the
@@ -382,7 +382,7 @@ retrieve and how naturally it behaves in the first moments of interaction.
 ## 2026-04-28 - Launch day: Twitter live, HN gated
 
 ### Context
-- Objective: post the Continuo launch publicly to convert technical
+- Objective: post the Bourdon launch publicly to convert technical
   priority (the public POSITIONING.md commit on 2026-04-22) into
   discoverable priority before any peer paper publishes the same
   framing.
@@ -390,16 +390,16 @@ retrieve and how naturally it behaves in the first moments of interaction.
   Twitter thread firing first and HN ~30 minutes later.
 
 ### Timeline
-- continuo.cloud verified live (HTTP 200, 9.2KB, ~250ms TTFB).
+- bourdon.ai verified live (HTTP 200, 9.2KB, ~250ms TTFB).
 - Repo About sidebar populated (description + homepage + 8 topics).
-- README first line hoisted to feature continuo.cloud above the fold
+- README first line hoisted to feature bourdon.ai above the fold
   (commit 801a129).
 - scripts/launch.py written + shipped (commit 4b9da91): interactive
   poster with weighted-char Twitter pre-flight (URLs = 23, codepoints
   > U+10FF count as 2) and HN's 80-char title limit. Pre-flight caught
   5 of 7 tweets over the 280-weighted limit and the HN title at 89/80.
 - Drafts tightened (commit 68ee421): tweets 2/3/4/6/7 trimmed,
-  HN title swapped to the alternate ("Show HN: Continuo - recognition-
+  HN title swapped to the alternate ("Show HN: Bourdon - recognition-
   first memory for AI agents", 58 chars).
 - 9am Pacific: Twitter thread posted via the X compose-stack flow
   (all 7 tweets atomic). User reports "We are live!"

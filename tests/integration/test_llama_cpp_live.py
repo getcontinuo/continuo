@@ -8,7 +8,7 @@ semantics that the unit tests can only approximate with ``MockTransport``.
 Requirements
 ------------
 - ``llama-server`` running on ``http://localhost:8080`` (override with
-  ``CONTINUO_LLAMA_URL`` env var) with ``--slots`` enabled.
+  ``BOURDON_LLAMA_URL`` env var) with ``--slots`` enabled.
 - Any model loaded; tests do not depend on output quality.
 - ``httpx`` installed (``pip install -e '.[llama-cpp]'``).
 
@@ -44,7 +44,7 @@ pytestmark = pytest.mark.integration
 # -- Configuration -----------------------------------------------------------
 
 
-LLAMA_URL = os.environ.get("CONTINUO_LLAMA_URL", "http://localhost:8080")
+LLAMA_URL = os.environ.get("BOURDON_LLAMA_URL", "http://localhost:8080")
 
 
 def _server_reachable(url: str, timeout: float = 0.5) -> bool:
@@ -62,7 +62,7 @@ def _server_reachable(url: str, timeout: float = 0.5) -> bool:
 if not _server_reachable(LLAMA_URL):
     pytest.skip(
         f"llama-server not reachable at {LLAMA_URL}; "
-        "set CONTINUO_LLAMA_URL or start the server. Skipping live tests.",
+        "set BOURDON_LLAMA_URL or start the server. Skipping live tests.",
         allow_module_level=True,
     )
 

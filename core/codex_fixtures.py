@@ -1,4 +1,4 @@
-"""Hermetic fixture sources for `continuo codex eval --fixtures`."""
+"""Hermetic fixture sources for `bourdon codex eval --fixtures`."""
 
 from __future__ import annotations
 

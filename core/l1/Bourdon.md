@@ -1,4 +1,4 @@
-# Continuo
+# Bourdon
 **Type:** Concept / Architecture / Future Product  
 **Status:** Speccing — v1 spec complete  
 **Last updated:** 2026-04-14
@@ -7,7 +7,7 @@
 A tiered, human-inspired memory orchestration layer for local AI systems. Designed by Ryan Davis (RADMAN) on 2026-04-14. The missing layer in every RAG stack.
 
 ## The Core Insight
-Existing RAG systems (including UltraRAG, ClawXMemory, all OpenClaw plugins) are retrieve-then-respond. They are archives with fast lookup. Continuo introduces *timing-aware, parallelized retrieval* so AI feels like it recognizes context rather than looking it up.
+Existing RAG systems (including UltraRAG, ClawXMemory, all OpenClaw plugins) are retrieve-then-respond. They are archives with fast lookup. Bourdon introduces *timing-aware, parallelized retrieval* so AI feels like it recognizes context rather than looking it up.
 
 ## The Five Layers
 - **L0 — Hot Cache:** 2–3K tokens, always in system prompt, zero retrieval

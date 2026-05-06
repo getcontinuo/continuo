@@ -1,12 +1,12 @@
-# Continuo Adapter Contract v0.1
+# Bourdon Adapter Contract v0.1
 
-An **adapter** is the bridge between an agent's native memory store and Continuo's standardized L5 manifest. Adapters are how Continuo federates across agents it does not control.
+An **adapter** is the bridge between an agent's native memory store and Bourdon's standardized L5 manifest. Adapters are how Bourdon federates across agents it does not control.
 
 ## Two Kinds of Adapters
 
-**Native publisher** — the agent itself writes its L5 directly. Used when we control the agent (Clyde, Clair, any agent built on OpenAI Agents SDK with Continuo as a dependency). L5 is written at session close from the agent's internal state.
+**Native publisher** — the agent itself writes its L5 directly. Used when we control the agent (Clyde, Clair, any agent built on OpenAI Agents SDK with Bourdon as a dependency). L5 is written at session close from the agent's internal state.
 
-**External adapter** — code that reads an agent's native memory store (files, SQLite, JSONL, proprietary APIs) and normalizes it into L5. Used when we do not control the agent. Examples in Continuo v1: Claude Code, Codex. Community adapters fill the rest (Cursor, Copilot, Obsidian, etc.).
+**External adapter** — code that reads an agent's native memory store (files, SQLite, JSONL, proprietary APIs) and normalizes it into L5. Used when we do not control the agent. Examples in Bourdon v1: Claude Code, Codex. Community adapters fill the rest (Cursor, Copilot, Obsidian, etc.).
 
 Both kinds implement the same interface.
 
@@ -16,7 +16,7 @@ Both kinds implement the same interface.
 from typing import Protocol
 from datetime import datetime
 
-class ContinuoAdapter(Protocol):
+class BourdonAdapter(Protocol):
     """Every adapter (native or external) implements this."""
 
     agent_id: str          # unique slug, matches L5 schema agent.id
@@ -47,7 +47,7 @@ class ContinuoAdapter(Protocol):
     def health_check(self) -> HealthStatus:
         """
         Return ok | degraded | blocked with reason.
-        Used by `continuo doctor` CLI.
+        Used by `bourdon doctor` CLI.
         """
         ...
 ```
@@ -57,11 +57,11 @@ class ContinuoAdapter(Protocol):
 Adapters register via Python entry points in `pyproject.toml`:
 
 ```toml
-[project.entry-points."continuo.adapters"]
+[project.entry-points."bourdon.adapters"]
 my-agent = "my_package.adapter:MyAgentAdapter"
 ```
 
-Continuo's CLI and L6 server discover adapters by iterating the `continuo.adapters` entry point group. No central registry needed.
+Bourdon's CLI and L6 server discover adapters by iterating the `bourdon.adapters` entry point group. No central registry needed.
 
 ## Data Contract
 
@@ -70,7 +70,7 @@ See `L5_schema.json` for the normative schema. Adapters MUST produce manifests t
 ## Error Semantics
 
 - **`AdapterDiscoveryError`** — the native store does not exist or cannot be read. Raised from `discover()`. Non-fatal; L6 skips this adapter and logs.
-- **`AdapterExportError`** — the native store exists but something went wrong during export. Raised from `export_l5()` or `export_sessions()`. Non-fatal but surfaced in `continuo doctor`.
+- **`AdapterExportError`** — the native store exists but something went wrong during export. Raised from `export_l5()` or `export_sessions()`. Non-fatal but surfaced in `bourdon doctor`.
 - **`AdapterVersionMismatchError`** — the native store is a newer/older format than this adapter supports. Specific case of discovery error. Surfaces upgrade guidance.
 - **Everything else** must be caught inside the adapter and converted to a `HealthStatus.degraded` with a reason — adapters never propagate unknown exceptions to the L6 server.
 
@@ -112,7 +112,7 @@ The `since` parameter on `export_l5()` and `export_sessions()` allows efficient 
 ```python
 from datetime import datetime
 from pathlib import Path
-from adapters.base import ContinuoAdapter, L5Manifest, AgentInfo, Entity
+from adapters.base import BourdonAdapter, L5Manifest, AgentInfo, Entity
 
 class MyToolAdapter:
     agent_id = "my-tool"
@@ -155,7 +155,7 @@ Fixtures live under `tests/fixtures/<agent_id>/` with sample native-store conten
 
 ## Versioning
 
-- Adapter contract has its own semver, tied to Continuo spec version but independently bumped on breaking changes
+- Adapter contract has its own semver, tied to Bourdon spec version but independently bumped on breaking changes
 - Adapters declare `CONTRACT_VERSION = "0.1"` at module level
 - L6 warns on version mismatch but does not reject — adapters are free to be ahead or behind
 

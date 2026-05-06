@@ -1,1 +1,1 @@
-"""Continuo CLI package."""
+"""Bourdon CLI package."""

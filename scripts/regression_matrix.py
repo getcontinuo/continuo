@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Cross-platform regression matrix for short-index schema enforcement.
 
-Runs migrate / validate / build_continuo_l5 against each fixture case under
+Runs migrate / validate / build_bourdon_l5 against each fixture case under
 ``tests/fixtures/short-index/``, compares actual exit codes and the
 ``known_entities`` count against the expectations declared in each case's
 ``meta.json``, and writes a JSON report to
@@ -93,7 +93,7 @@ def _read_known_entities(python_cmd: str, yaml_path: Path) -> int | None:
 
 def _setup_case_dirs(case_dir: Path) -> dict[str, Path]:
     """Create the temp workspace for a fixture case and copy/seed indices."""
-    temp_root = Path(tempfile.gettempdir()) / f"continuo-regression-{uuid.uuid4().hex}"
+    temp_root = Path(tempfile.gettempdir()) / f"bourdon-regression-{uuid.uuid4().hex}"
     workspace_root = temp_root / "workspace"
     global_root = temp_root / "global-memory"
     out_root = temp_root / "out"
@@ -309,7 +309,7 @@ def main() -> int:
         return 1
 
     schema_path = workspace_root / "spec" / "L5_schema.json"
-    build_script = workspace_root / "scripts" / "build_continuo_l5.py"
+    build_script = workspace_root / "scripts" / "build_bourdon_l5.py"
     migrate_script = workspace_root / "scripts" / "migrate_short_index.py"
     validate_script = workspace_root / "scripts" / "validate_short_index.py"
 

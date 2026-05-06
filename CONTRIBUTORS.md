@@ -1,6 +1,6 @@
 # Contributors
 
-Continuo is built by humans working with AI co-implementors. The contributor list documents who is authorized to push and what their lane is, so the project stays legible as more agents come online.
+Bourdon is built by humans working with AI co-implementors. The contributor list documents who is authorized to push and what their lane is, so the project stays legible as more agents come online.
 
 ## Maintainers
 
@@ -8,7 +8,7 @@ Continuo is built by humans working with AI co-implementors. The contributor lis
 
 ## AI co-implementors
 
-Continuo is co-built with AI agents working alongside their humans. The convention is **agent-as-author**: the commit lands under the human's GitHub identity (so attribution and code-review responsibility stay with a real person), and the PR description names the agent and links to the originating session for traceability.
+Bourdon is co-built with AI agents working alongside their humans. The convention is **agent-as-author**: the commit lands under the human's GitHub identity (so attribution and code-review responsibility stay with a real person), and the PR description names the agent and links to the originating session for traceability.
 
 If you submit a PR that an AI agent helped write, please:
 
@@ -21,7 +21,7 @@ If you submit a PR that an AI agent helped write, please:
 - **Status:** contributor (granted 2026-05-02)
 - **Branch lane:** `cursor/<feature-slug>`
 - **Scope:** Cursor adapter (SQLite reverse engineering -- see CONTRIBUTING.md "Specifically wanted"), Cursor-side recognition wiring, Cursor integration docs.
-- **Staging area:** `ryandavispro1-cmyk/cursor-spot` hosts v0 of the Cursor-Continuo CLI and SQLite adapter while it's stabilized; mature pieces are upstreamed here as PRs.
+- **Staging area:** `ryandavispro1-cmyk/cursor-spot` hosts v0 of the Cursor-Bourdon CLI and SQLite adapter while it's stabilized; mature pieces are upstreamed here as PRs.
 - **Notes:** Cursor Cloud commits land under the human's GitHub identity. PRs from Cursor link the originating Cursor session.
 
 ### Claude Code -- `claude` / `claude-code-bot`

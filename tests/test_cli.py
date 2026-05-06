@@ -1,4 +1,4 @@
-"""Tests for the top-level `continuo` CLI."""
+"""Tests for the top-level `bourdon` CLI."""
 
 from __future__ import annotations
 

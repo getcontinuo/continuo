@@ -27,7 +27,7 @@ jobs:
       - name: Bootstrap memory directories
         shell: pwsh
         run: |
-          powershell -ExecutionPolicy Bypass -File scripts/bootstrap-continuo-mcp.ps1 -WorkspaceRoot "."
+          powershell -ExecutionPolicy Bypass -File scripts/bootstrap-bourdon-mcp.ps1 -WorkspaceRoot "."
 
       - name: Enforce canonical short-index schema (CI check only)
         shell: pwsh

@@ -16,7 +16,7 @@ from adapters.base import (
     AdapterDiscoveryError,
     AgentInfo,
     AgentStore,
-    ContinuoAdapter,
+    BourdonAdapter,
     Entity,
     HealthStatus,
     L5Manifest,
@@ -1101,4 +1101,4 @@ class CodexAdapter:
         )
 
 
-_: ContinuoAdapter = CodexAdapter()
+_: BourdonAdapter = CodexAdapter()
