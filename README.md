@@ -199,6 +199,6 @@ Because you found us here, you might like to check out:
 
 ## License
 
-Business Source License 1.1, auto-converts to Apache License 2.0 four years after each version is published. See [`LICENSE`](LICENSE) for the full text and [`LICENSE_FAQ.md`](LICENSE_FAQ.md) for guidance on what's permitted. Commercial licensing inquiries: licensing@radlab.online.
+Business Source License 1.1, auto-converts to Apache License 2.0 four years after each version is published. See [`LICENSE`](LICENSE) for the full text and [`LICENSE_FAQ.md`](LICENSE_FAQ.md) for guidance on what's permitted. Commercial licensing inquiries: licensing@bourdon.ai.
 
 Versions v0.0.1 through v0.1.0 were published under MIT and remain MIT in their distributed form. Relicensing to BSL 1.1 applies from v0.2.0 onward.
