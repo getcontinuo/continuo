@@ -14,7 +14,7 @@ This spike tracks the hardening pass for:
 - Updated cycle runner to run migrate+validate before export/smoke:
   - `scripts/run_memory_cycle.ps1`
 - Updated bootstrap to use launcher resolution and run migrate+validate:
-  - `scripts/bootstrap-continuo-mcp.ps1`
+  - `scripts/bootstrap-bourdon-mcp.ps1`
 - Updated MCP smoke script to accept explicit server Python executable:
   - `scripts/mcp_smoke_test.py` (`--server-python`)
 - Added fixture-driven matrix:

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Cross-platform preflight for the Continuo memory-cycle pipeline.
+"""Cross-platform preflight for the Bourdon memory-cycle pipeline.
 
 Verifies required files exist, required Python modules are importable,
 the workspace's short-index files satisfy the canonical schema, and
@@ -31,7 +31,7 @@ def _required_files(workspace_root: Path) -> list[tuple[Path, str]]:
     return [
         (workspace_root / "scripts" / "migrate_short_index.py", "Migration script"),
         (workspace_root / "scripts" / "validate_short_index.py", "Validation script"),
-        (workspace_root / "scripts" / "build_continuo_l5.py", "Exporter script"),
+        (workspace_root / "scripts" / "build_bourdon_l5.py", "Exporter script"),
         (workspace_root / "scripts" / "mcp_smoke_test.py", "MCP smoke script"),
         (workspace_root / "scripts" / "run_memory_cycle.ps1", "Memory cycle runner"),
         (workspace_root / "scripts" / "regression_matrix.py", "Regression matrix runner"),
@@ -65,7 +65,7 @@ def _run_check(python_cmd: str, args: list[str]) -> int:
 
 
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Continuo memory-cycle doctor preflight.")
+    parser = argparse.ArgumentParser(description="Bourdon memory-cycle doctor preflight.")
     parser.add_argument("--workspace-root", type=Path, default=Path.cwd())
     parser.add_argument(
         "--install-missing-deps",
@@ -88,7 +88,7 @@ def main() -> int:
     report_dir.mkdir(parents=True, exist_ok=True)
     doctor_report = report_dir / "doctor-report.json"
 
-    print("Running Continuo doctor preflight...")
+    print("Running Bourdon doctor preflight...")
     print(f"Workspace: {workspace_root}")
     print(f"Python: {python_cmd}")
 

@@ -13,12 +13,12 @@ from mcp.client.stdio import StdioServerParameters, stdio_client
 
 
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run MCP smoke tests against Continuo L6 server.")
+    parser = argparse.ArgumentParser(description="Run MCP smoke tests against Bourdon L6 server.")
     parser.add_argument("--library-path", default=str(Path.home() / "agent-library"))
-    parser.add_argument("--entity-name", default="Continuo MCP")
-    parser.add_argument("--query-topic", default="Continuo MCP")
+    parser.add_argument("--entity-name", default="Bourdon MCP")
+    parser.add_argument("--query-topic", default="Bourdon MCP")
     parser.add_argument(
-        "--expected-continuo-summary",
+        "--expected-bourdon-summary",
         default="",
     )
     parser.add_argument("--assertions", action="store_true")
@@ -26,7 +26,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--server-python",
         default=sys.executable,
-        help="Python executable used to launch the Continuo L6 server.",
+        help="Python executable used to launch the Bourdon L6 server.",
     )
     return parser.parse_args()
 
@@ -116,16 +116,16 @@ async def _run(args: argparse.Namespace) -> int:
                     raise AssertionError(f"find_entity returned no matches for {args.entity_name}.")
 
                 cursor_summary = find_payload["matches"][0].get("summaries", {}).get("cursor", "")
-                if args.expected_continuo_summary:
-                    report["checks"]["continuo_summary_matches_expected"] = (
-                        cursor_summary == args.expected_continuo_summary
+                if args.expected_bourdon_summary:
+                    report["checks"]["bourdon_summary_matches_expected"] = (
+                        cursor_summary == args.expected_bourdon_summary
                     )
-                    if not report["checks"]["continuo_summary_matches_expected"]:
+                    if not report["checks"]["bourdon_summary_matches_expected"]:
                         raise AssertionError(
-                            f"Unexpected summary. Expected {args.expected_continuo_summary!r}, got {cursor_summary!r}"
+                            f"Unexpected summary. Expected {args.expected_bourdon_summary!r}, got {cursor_summary!r}"
                         )
                 else:
-                    report["checks"]["continuo_summary_matches_expected"] = True
+                    report["checks"]["bourdon_summary_matches_expected"] = True
 
                 report["checks"]["cross_agent_summary_has_entities"] = bool(summary_payload.get("entities"))
                 if not report["checks"]["cross_agent_summary_has_entities"]:

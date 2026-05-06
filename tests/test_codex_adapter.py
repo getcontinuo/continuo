@@ -12,7 +12,7 @@ from adapters import codex as codex_module
 from adapters.base import (
     SPEC_VERSION,
     AdapterDiscoveryError,
-    ContinuoAdapter,
+    BourdonAdapter,
     HealthStatus,
     L5Manifest,
 )
@@ -136,7 +136,7 @@ def isolated_home(tmp_path, monkeypatch):
 
 
 def test_adapter_satisfies_protocol(isolated_home):
-    assert isinstance(CodexAdapter(), ContinuoAdapter)
+    assert isinstance(CodexAdapter(), BourdonAdapter)
 
 
 def test_adapter_constants():

@@ -8,7 +8,7 @@ import pytest
 
 from core import orchestrator
 from core.orchestrator import (
-    Continuo,
+    Bourdon,
     build_system_prompt,
     detect_entities,
     estimate_tokens,
@@ -31,7 +31,7 @@ def test_estimate_tokens_short_string():
 
 
 def test_detect_entities_case_insensitive():
-    keywords = ["Clyde", "ILTT", "Continuo"]
+    keywords = ["Clyde", "ILTT", "Bourdon"]
     assert detect_entities("tell me about clyde", keywords) == ["Clyde"]
     assert detect_entities("CLYDE is cool", keywords) == ["Clyde"]
 
@@ -117,20 +117,20 @@ def test_load_l1_synopsis_missing_returns_none(isolated_memory_dirs):
     assert result is None
 
 
-# -- Continuo class tests ------------------------------------------------------
+# -- Bourdon class tests ------------------------------------------------------
 
 
-def test_continuo_init_loads_l0(isolated_memory_dirs):
-    memory = Continuo()
+def test_bourdon_init_loads_l0(isolated_memory_dirs):
+    memory = Bourdon()
     assert len(memory.keywords) == 3
     assert set(memory.keywords) == {"Alpha", "Beta", "Gamma"}
     assert "L0 CONTEXT" in memory.l0_context
 
 
 @pytest.mark.asyncio
-async def test_continuo_prepare_with_l0_hit(isolated_memory_dirs):
+async def test_bourdon_prepare_with_l0_hit(isolated_memory_dirs):
     isolated_memory_dirs["write_l1"]("Alpha", "# Alpha\nProject synopsis.")
-    memory = Continuo()
+    memory = Bourdon()
     prompt = await memory.prepare("Let's work on Alpha today", "You are helpful.")
     assert "You are helpful." in prompt
     assert "L0 CONTEXT" in prompt
@@ -138,8 +138,8 @@ async def test_continuo_prepare_with_l0_hit(isolated_memory_dirs):
 
 
 @pytest.mark.asyncio
-async def test_continuo_prepare_with_no_hits(isolated_memory_dirs):
-    memory = Continuo()
+async def test_bourdon_prepare_with_no_hits(isolated_memory_dirs):
+    memory = Bourdon()
     prompt = await memory.prepare("Unrelated question", "You are helpful.")
     assert "L0 CONTEXT" in prompt  # L0 always present
     # No L1 section because no entities matched
@@ -147,21 +147,21 @@ async def test_continuo_prepare_with_no_hits(isolated_memory_dirs):
 
 
 @pytest.mark.asyncio
-async def test_continuo_prepare_multiple_entities(isolated_memory_dirs):
+async def test_bourdon_prepare_multiple_entities(isolated_memory_dirs):
     isolated_memory_dirs["write_l1"]("Alpha", "# Alpha\nAlpha content.")
     isolated_memory_dirs["write_l1"]("Beta", "# Beta\nBeta content.")
-    memory = Continuo()
+    memory = Bourdon()
     prompt = await memory.prepare("compare alpha and beta", "You are helpful.")
     assert "Alpha content" in prompt
     assert "Beta content" in prompt
 
 
 @pytest.mark.asyncio
-async def test_continuo_prepare_missing_synopsis_degrades_gracefully(
+async def test_bourdon_prepare_missing_synopsis_degrades_gracefully(
     isolated_memory_dirs,
 ):
     """L0 keyword hit but no L1 file should not crash the orchestrator."""
-    memory = Continuo()  # No L1 files created
+    memory = Bourdon()  # No L1 files created
     prompt = await memory.prepare("Talk about Alpha", "Base.")
     # L0 present, L1 absent, no exception
     assert "L0 CONTEXT" in prompt
@@ -169,9 +169,9 @@ async def test_continuo_prepare_missing_synopsis_degrades_gracefully(
     assert "L1 ENTITY CONTEXT" not in prompt
 
 
-def test_continuo_reload_l0_picks_up_changes(isolated_memory_dirs):
+def test_bourdon_reload_l0_picks_up_changes(isolated_memory_dirs):
     """After editing hot_cache.yaml on disk, reload_l0() should pick up the new entities."""
-    memory = Continuo()
+    memory = Bourdon()
     initial_count = len(memory.keywords)
 
     # Append a new entity to the YAML
@@ -218,7 +218,7 @@ async def test_l1_token_budget_skips_entities_over_budget(
     isolated_memory_dirs["write_l1"]("Beta", body)
     isolated_memory_dirs["write_l1"]("Gamma", body)
 
-    memory = Continuo()
+    memory = Bourdon()
     prompt = await memory.prepare("alpha beta gamma", "base")
 
     # First entity fits; at least one body occurrence expected

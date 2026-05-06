@@ -2,11 +2,11 @@
   "version": 1,
   "entries": [
     {
-      "topic_key": "continuo_mcp",
-      "topic_name": "Continuo MCP",
+      "topic_key": "bourdon_mcp",
+      "topic_name": "Bourdon MCP",
       "summary": "Date is intentionally malformed.",
       "triggers": [
-        "continuo mcp"
+        "bourdon mcp"
       ],
       "scope": "workspace",
       "access_level": "team",

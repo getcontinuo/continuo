@@ -1,4 +1,4 @@
-# 🎶 Continuo — Release Notes
+# 🎶 Bourdon — Release Notes
 
 ### Your AI agents finally remember each other.
 
@@ -6,7 +6,7 @@
 
 Every AI tool you use — Claude Code, Codex, Cursor, Copilot — builds its own silo of memory. **None of them talk to each other.** You repeat yourself. Context evaporates. Collaboration resets to zero every time you switch tools.
 
-**Continuo fixes that.** A tiered, timing-aware memory protocol that federates knowledge across every agent you work with — so your tools recognize you, recognize your projects, and recognize *each other*.
+**Bourdon fixes that.** A tiered, timing-aware memory protocol that federates knowledge across every agent you work with — so your tools recognize you, recognize your projects, and recognize *each other*.
 
 This isn't retrieval-augmented generation. This is **recognition-augmented cognition.** Your AI doesn't look you up. It *knows* you.
 
@@ -14,7 +14,7 @@ This isn't retrieval-augmented generation. This is **recognition-augmented cogni
 
 ## 🚀 v0.0.12 — Layer C: KV-Cache-Aware Interrupts
 
-**Released 2026-05-03** · 343 unit + 5 live integration tests passing · MIT licensed · [continuo.cloud](https://continuo.cloud) live
+**Released 2026-05-03** · 343 unit + 5 live integration tests passing · MIT licensed · [bourdon.ai](https://bourdon.ai) live
 
 ### What's New
 
@@ -52,7 +52,7 @@ Recognition matching switched from substring to **token-based**: both user messa
 
 ### v0.0.10 — Cursor Adapter Graduates from cursor-spot
 
-**The deferred-from-day-1 Cursor adapter ships.** `adapters/cursor.py` reads Cursor's SQLite `state.vscdb` files at the platform-specific data directory, copies read-only to a tmp file before parsing, and emits a normalized Continuo L5 manifest. Cursor agent-as-author preserved on the SQLite extraction (`_cursor_sqlite.py`). All four headline IDE adapters (Claude Code, Codex, Cursor, native Clyde/Clair) are now in tree. CONTRIBUTORS.md gains a stacked-PR cursor[bot] caveat. **335 tests passing.**
+**The deferred-from-day-1 Cursor adapter ships.** `adapters/cursor.py` reads Cursor's SQLite `state.vscdb` files at the platform-specific data directory, copies read-only to a tmp file before parsing, and emits a normalized Bourdon L5 manifest. Cursor agent-as-author preserved on the SQLite extraction (`_cursor_sqlite.py`). All four headline IDE adapters (Claude Code, Codex, Cursor, native Clyde/Clair) are now in tree. CONTRIBUTORS.md gains a stacked-PR cursor[bot] caveat. **335 tests passing.**
 
 ### v0.0.9 — Layer A Validated + Layer B (`interrupt_first`)
 
@@ -60,15 +60,15 @@ Recognition matching switched from substring to **token-based**: both user messa
 
 ### v0.0.8 — Backend-Neutral Inference Layer (Layer A)
 
-**The contract that makes Continuo's runtime backend-agnostic.** `core/inference_protocol.py` defines `InferenceBackend` as a `@runtime_checkable Protocol` with four methods: `capabilities()`, `slots()`, `stream_completion()`, `cancel()`. `adapters/llama_cpp_backend.py` implements it against `llama-server` SSE — first concrete adapter; httpx is gated behind the `[llama-cpp]` extra so the Protocol surface stays dependency-free. `register_backend()` checks capability requirements at registration time so missing primitives raise `BackendUnsupported` loudly rather than silently degrading. First release to formally exercise the agent-as-author + agent-as-reviewer pattern: Claude authored, Cursor reviewed and hardened. **310 tests passing.**
+**The contract that makes Bourdon's runtime backend-agnostic.** `core/inference_protocol.py` defines `InferenceBackend` as a `@runtime_checkable Protocol` with four methods: `capabilities()`, `slots()`, `stream_completion()`, `cancel()`. `adapters/llama_cpp_backend.py` implements it against `llama-server` SSE — first concrete adapter; httpx is gated behind the `[llama-cpp]` extra so the Protocol surface stays dependency-free. `register_backend()` checks capability requirements at registration time so missing primitives raise `BackendUnsupported` loudly rather than silently degrading. First release to formally exercise the agent-as-author + agent-as-reviewer pattern: Claude authored, Cursor reviewed and hardened. **310 tests passing.**
 
 ### v0.0.7 — Recognition Runtime + Temporal Validity + Role Narratives
 
-**The headline behavior fix.** `core/recognition_runtime.py` ships the first concrete implementation of the recognition-first runtime: synchronous template-based recognition string + concurrent L1 hydration awaitable, ≤3s timeout budget, never raises. Plus `agent.role_narrative` (differentiates agents sharing the same `type` slug — Inspired by [Intrinsic Memory Agents](https://hf.co/papers/2508.08997)). Plus temporal validity windows on entities (Zep-Graphiti-inspired `valid_from`/`valid_to`). Plus `continuo codex export | build-context | eval` and `continuo claude-code export` SessionEnd hook target. Plus `spec/POSITIONING.md` and `spec/RELATED_WORK.md`. **250 tests passing.** Deployed at [continuo.cloud](https://continuo.cloud).
+**The headline behavior fix.** `core/recognition_runtime.py` ships the first concrete implementation of the recognition-first runtime: synchronous template-based recognition string + concurrent L1 hydration awaitable, ≤3s timeout budget, never raises. Plus `agent.role_narrative` (differentiates agents sharing the same `type` slug — Inspired by [Intrinsic Memory Agents](https://hf.co/papers/2508.08997)). Plus temporal validity windows on entities (Zep-Graphiti-inspired `valid_from`/`valid_to`). Plus `bourdon codex export | build-context | eval` and `bourdon claude-code export` SessionEnd hook target. Plus `spec/POSITIONING.md` and `spec/RELATED_WORK.md`. **250 tests passing.** Deployed at [bourdon.ai](https://bourdon.ai).
 
 ### v0.0.6 — Codex Adapter + Atomic L5 Write
 
-**OpenAI Codex joins the federation, and L5 writes are never observed half-written.** `adapters/codex.py` parses `~/.codex/session_index.jsonl` newest-first, resolves rollout files to extract working directories and timestamps, and dedupes thread names into topic entities. Registered under the `continuo.adapters` entry point. `core/l5_io.py` introduces `write_l5()` / `write_l5_dict()` with tmp + rename atomic semantics — safe on POSIX and NTFS, no more race conditions between adapters writing and L6 reading. **188 tests passing.**
+**OpenAI Codex joins the federation, and L5 writes are never observed half-written.** `adapters/codex.py` parses `~/.codex/session_index.jsonl` newest-first, resolves rollout files to extract working directories and timestamps, and dedupes thread names into topic entities. Registered under the `bourdon.adapters` entry point. `core/l5_io.py` introduces `write_l5()` / `write_l5_dict()` with tmp + rename atomic semantics — safe on POSIX and NTFS, no more race conditions between adapters writing and L6 reading. **188 tests passing.**
 
 ### v0.0.5 — L6 Federation MCP Server *(the big one)*
 
@@ -76,7 +76,7 @@ Recognition matching switched from substring to **token-based**: both user messa
 
 ### v0.0.4 — L2 UltraRAG Async Integration
 
-**Memory retrieval that doesn't make you wait.** L2 fires concurrently with the AI's first response and completes while you're still reading. It *never* blocks. It *never* raises. If the retrieval backend is down, you still get a response — you just don't get the deep context. Opt in via `CONTINUO_L2_ENABLED=true` or `core/l2_config.yaml`. **116 tests passing.**
+**Memory retrieval that doesn't make you wait.** L2 fires concurrently with the AI's first response and completes while you're still reading. It *never* blocks. It *never* raises. If the retrieval backend is down, you still get a response — you just don't get the deep context. Opt in via `BOURDON_L2_ENABLED=true` or `core/l2_config.yaml`. **116 tests passing.**
 
 ### v0.0.3 — Claude Code Adapter Full Parsing
 
@@ -96,7 +96,7 @@ Recognition matching switched from substring to **token-based**: both user messa
 
 | Milestone | What it unlocks |
 |-----------|----------------|
-| **v0.3.0** | `pip install continuo-memory` + `continuo init / up / query` CLI — one command to federate |
+| **v0.3.0** | `pip install bourdon` + `bourdon init / up / query` CLI — one command to federate |
 | **v0.4.0** | Clyde + Clair native L5 publishers — agents that *write* to the federation, not just get read |
 | **v1.0.0** | Docs site, community adapters, **public launch** |
 | **v1.x** | Cursor adapter (SQLite reverse-engineering), Copilot adapter, LangChain / CrewAI / AutoGen integrations |
@@ -132,9 +132,9 @@ Cross-agent federation:
 
 | | |
 |---|---|
-| 🌐 **Homepage** | [continuo.cloud](https://continuo.cloud) |
-| 💻 **Repository** | [github.com/getcontinuo/continuo](https://github.com/getcontinuo/continuo) |
-| 🐛 **Issues** | [github.com/getcontinuo/continuo/issues](https://github.com/getcontinuo/continuo/issues) |
+| 🌐 **Homepage** | [bourdon.ai](https://bourdon.ai) |
+| 💻 **Repository** | [github.com/getbourdon/bourdon](https://github.com/getbourdon/bourdon) |
+| 🐛 **Issues** | [github.com/getbourdon/bourdon/issues](https://github.com/getbourdon/bourdon/issues) |
 | 📄 **License** | MIT |
 | 📐 **Architecture** | [`spec/ARCHITECTURE_v0.1.md`](spec/ARCHITECTURE_v0.1.md) |
 | 📜 **Thesis** | [`spec/THESIS.md`](spec/THESIS.md) |

@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://continuo.cloud/schema/L5_manifest_v0.1.json",
-  "title": "Continuo L5 Agent Memory Manifest",
+  "$id": "https://bourdon.ai/schema/L5_manifest_v0.1.json",
+  "title": "Bourdon L5 Agent Memory Manifest",
   "description": "A per-agent public memory glossary. L5 is a projection of L0-L4 personal memory into a standardized, agent-readable form with visibility filtering applied. L6 (the federation library) aggregates L5 manifests across agents.",
   "type": "object",
   "required": ["spec_version", "agent", "last_updated"],
   "properties": {
     "spec_version": {
-      "description": "Continuo spec version this manifest conforms to (semver). L6 warns when reading a manifest with an incompatible version.",
+      "description": "Bourdon spec version this manifest conforms to (semver). L6 warns when reading a manifest with an incompatible version.",
       "type": "string",
       "pattern": "^\\d+\\.\\d+$",
       "examples": ["0.1"]
@@ -46,7 +46,7 @@
           "examples": ["pc-threadripper", "mac-m1max"]
         },
         "spec_version_compat": {
-          "description": "Version range of Continuo specs this manifest is compatible with. Uses npm-style semver ranges. If omitted, assumed equal to spec_version.",
+          "description": "Version range of Bourdon specs this manifest is compatible with. Uses npm-style semver ranges. If omitted, assumed equal to spec_version.",
           "type": "string",
           "examples": [">=0.1", "^0.1.0"]
         },

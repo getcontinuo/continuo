@@ -1,20 +1,20 @@
 """
-Continuo external adapter for Cursor (the AI-first IDE).
+Bourdon external adapter for Cursor (the AI-first IDE).
 
 Cursor stores its workspace state in SQLite databases at platform-specific
 paths (`~/.config/Cursor/`, `~/Library/Application Support/Cursor/`,
 `%APPDATA%/Cursor/`). This adapter discovers those stores, copies them
 read-only to a tmp file, parses the ``ItemTable`` key-value rows, and
-emits a normalized Continuo L5 manifest.
+emits a normalized Bourdon L5 manifest.
 
 The SQLite extraction logic is in ``adapters/_cursor_sqlite.py``. This
-module wraps it in the ``ContinuoAdapter`` Protocol from
+module wraps it in the ``BourdonAdapter`` Protocol from
 ``adapters/base.py`` and applies the project's standard visibility policy.
 
 Origin: this adapter graduates from the v0 implementation in
-``ryandavispro1-cmyk/cursor-spot`` (``cursor_continuo`` package). The
+``ryandavispro1-cmyk/cursor-spot`` (``cursor_bourdon`` package). The
 SQLite extraction is preserved verbatim; the L5 emission is rewritten
-on top of Continuo's normative schema (``adapters/base.L5Manifest``,
+on top of Bourdon's normative schema (``adapters/base.L5Manifest``,
 ``Entity``, ``Session``) for federation consistency.
 
 Usage::
@@ -57,7 +57,7 @@ logger = logging.getLogger(__name__)
 AGENT_ID = "cursor"
 AGENT_TYPE = "code-assistant"
 ROLE_NARRATIVE = (
-    "AI-first IDE. Continuo reads the SQLite-backed composer/workspace "
+    "AI-first IDE. Bourdon reads the SQLite-backed composer/workspace "
     "state to surface recent sessions and project entities to other agents."
 )
 
@@ -73,7 +73,7 @@ _SPEC_VERSION = "0.1"
 class CursorAdapter:
     """External adapter for Cursor's SQLite workspace state.
 
-    Implements the :class:`~adapters.base.ContinuoAdapter` Protocol
+    Implements the :class:`~adapters.base.BourdonAdapter` Protocol
     structurally. Defensive throughout: missing data dir → raise
     ``AdapterDiscoveryError`` from ``discover()``; everything else
     degrades to empty results rather than raising, matching the

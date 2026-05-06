@@ -4,7 +4,7 @@ Param(
 
 $ErrorActionPreference = "Stop"
 
-Write-Host "Bootstrapping Continuo MCP integration..."
+Write-Host "Bootstrapping Bourdon MCP integration..."
 
 function Resolve-Python {
     $python = Get-Command python -ErrorAction SilentlyContinue
@@ -42,12 +42,12 @@ $workspaceFixtureIndex = @"
   "version": 1,
   "entries": [
     {
-      "topic_key": "continuo_mcp",
-      "topic_name": "Continuo MCP",
-      "summary": "Workspace-specific Continuo MCP wiring and retrieval checks.",
+      "topic_key": "bourdon_mcp",
+      "topic_name": "Bourdon MCP",
+      "summary": "Workspace-specific Bourdon MCP wiring and retrieval checks.",
       "triggers": [
-        "continuo",
-        "continuo mcp",
+        "bourdon",
+        "bourdon mcp",
         "l6 server"
       ],
       "scope": "workspace",
@@ -81,24 +81,24 @@ $workspaceFixtureIndex = @"
 "@
 
 $workspaceFixtureTopics = @{
-    "continuo_mcp.md" = @"
-# Continuo MCP
+    "bourdon_mcp.md" = @"
+# Bourdon MCP
 
 ## Trigger Aliases
-- continuo
-- continuo mcp
+- bourdon
+- bourdon mcp
 - l6 server
 
 ## Short Chain
-- Workspace overlay for Continuo MCP should take precedence over global baseline.
+- Workspace overlay for Bourdon MCP should take precedence over global baseline.
 
 ## Long Chain
 - This workspace uses the continual-learning plugin to produce short and long memory chains.
-- Continuo L5 manifests are generated from merged chain data.
+- Bourdon L5 manifests are generated from merged chain data.
 - L6 store queries should resolve the workspace-specific summary for overlapping keys.
 
 ## Retrieval Hints
-- Prefer `find_entity("Continuo MCP")`.
+- Prefer `find_entity("Bourdon MCP")`.
 - Validate visibility remains `team`.
 
 ## Source Notes
@@ -161,7 +161,7 @@ if ($didSeedWorkspaceFixtures) {
             $workspaceFixtureTopics[$topicFile] | Set-Content -Path $topicPath -Encoding UTF8
         }
     }
-    Write-Host "Seeded workspace smoke-test fixtures for Continuo MCP and Keyword Retrieval."
+    Write-Host "Seeded workspace smoke-test fixtures for Bourdon MCP and Keyword Retrieval."
 }
 
 & $pythonCmd "scripts/migrate_short_index.py" --workspace-root $WorkspaceRoot

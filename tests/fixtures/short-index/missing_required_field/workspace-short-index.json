@@ -2,10 +2,10 @@
   "version": 1,
   "entries": [
     {
-      "topic_key": "continuo_mcp",
+      "topic_key": "bourdon_mcp",
       "summary": "Missing topic_name on purpose.",
       "triggers": [
-        "continuo mcp"
+        "bourdon mcp"
       ],
       "scope": "workspace",
       "access_level": "team",

@@ -28,7 +28,7 @@ $mcpReport = Join-Path $reportPath "mcp-smoke-report.json"
 $cycleReport = Join-Path $reportPath "memory-cycle-report.json"
 
 $builderArgs = @(
-    "scripts/build_continuo_l5.py",
+    "scripts/build_bourdon_l5.py",
     "--workspace-root", $WorkspaceRoot,
     "--strict-aliases",
     "--strict-precedence"
@@ -48,7 +48,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 & $pythonCmd @builderArgs
 if ($LASTEXITCODE -ne 0) {
-    throw "build_continuo_l5.py failed with exit code $LASTEXITCODE"
+    throw "build_bourdon_l5.py failed with exit code $LASTEXITCODE"
 }
 & $pythonCmd "scripts/mcp_smoke_test.py" --assertions --json-report $mcpReport --server-python $pythonCmd
 if ($LASTEXITCODE -ne 0) {

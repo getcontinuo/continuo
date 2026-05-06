@@ -1,4 +1,4 @@
-# Continuo -- continuo.cloud landing page
+# Bourdon -- bourdon.ai landing page
 #
 # Deploys the static site under `web/` to Cloudflare Workers + Static Assets
 # (Cloudflare's recommended path for static sites as of 2026; Pages classic
@@ -7,14 +7,14 @@
 # Workflow:
 #   wrangler deploy                      # ships to *.workers.dev URL
 #   curl https://<sub>.workers.dev       # immediate verification
-#   # then bind continuo.cloud as custom domain via Cloudflare dashboard
+#   # then bind bourdon.ai as custom domain via Cloudflare dashboard
 #   # then point IONOS DNS at Cloudflare nameservers OR add CNAME
 #
-# This file lives in the Continuo repo root because the deploy needs
+# This file lives in the Bourdon repo root because the deploy needs
 # access to the `web/` directory. The repo's .gitignore does not
 # need any wrangler-specific entries beyond the existing Python ones.
 
-name = "continuo-cloud-landing"
+name = "bourdon-cloud-landing"
 compatibility_date = "2026-04-27"
 
 # Keep the *.workers.dev URL active for immediate verification + as a backup
@@ -25,9 +25,9 @@ workers_dev = true
 directory = "./web"
 not_found_handling = "single-page-application"
 
-# Custom domain binding -- continuo.cloud is now on Cloudflare nameservers
+# Custom domain binding -- bourdon.ai is now on Cloudflare nameservers
 # (bob.ns.cloudflare.com + diva.ns.cloudflare.com, verified 2026-04-27),
 # so wrangler can bind it directly via this routes block.
 [[routes]]
-pattern = "continuo.cloud"
+pattern = "bourdon.ai"
 custom_domain = true
