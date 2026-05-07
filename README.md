@@ -6,11 +6,15 @@ Current AI memory systems are **call-and-repeat** — discrete turns with nothin
 
 > "We used our minds to make minds that make our minds better."
 
-Named for *basso continuo* — the continuous bass accompaniment in Baroque music that provides constant grounding while the melody moves above it.
+Named for the *bourdon* — the deep continuous drone of a pipe organ, the foundational tone that holds every other voice in place. (The lineage continues from the original *basso continuo* metaphor — the Baroque bass accompaniment — chosen when the project was named **Continuo** before the 2026-05-05 rebrand. Same music-theory family, tighter metaphor.)
 
 ---
 
-## Status: Pre-Alpha (v0.0.7)
+## Status: Pre-Alpha (v0.2.0, BSL 1.1)
+
+Project renamed Continuo → Bourdon on 2026-05-05 (v0.1.0); relicensed MIT → Business Source License 1.1 on 2026-05-06 (v0.2.0). See [release notes](https://github.com/getbourdon/bourdon/releases) for migration. The version-by-version history below covers v0.0.1 through v0.0.7 in detail; for v0.0.8 and later see GitHub Releases.
+
+### Earlier version history
 
 - **v0.0.1** -- initial scaffold, Phase 1 orchestrator working standalone
 - **v0.0.2** -- L5 JSON Schema + adapter contract, base adapter module, first external adapter stub (Claude Code, discovers memory sources), test suite (49 tests), CI workflow (Windows + Ubuntu + macOS x Python 3.10-3.12)
