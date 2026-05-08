@@ -26,9 +26,13 @@ from adapters.codex import (
     _merge_bourdon_memory_md_section,
     _safe_native_memory_text,
 )
+from adapters.cursor import CursorAdapter
 from core.codex_context import filter_manifest_for_access, write_codex_context_artifacts
 from core.codex_fixtures import create_sample_codex_sources
+from core.l2 import query_l2
 from core.l5_io import write_l5_dict
+from core.l6_server import prepare_recognition_context_from_store
+from core.l6_store import DEFAULT_LIBRARY_PATH, L6Store
 from core.recognition_runtime import recognition_first
 
 
@@ -43,6 +47,10 @@ def _default_claude_code_l5_path() -> Path:
 
 def _default_codex_l5_path() -> Path:
     return Path.home() / "agent-library" / "agents" / "codex.l5.yaml"
+
+
+def _default_cursor_l5_path() -> Path:
+    return Path.home() / "agent-library" / "agents" / "cursor.l5.yaml"
 
 
 def _parse_since(value: str | None) -> datetime | None:
@@ -98,6 +106,58 @@ def _handle_codex_export(args: argparse.Namespace) -> int:
     )
     _write_yaml_if_requested(data, args.out)
     _print_yaml(data)
+    return 0
+
+
+def _handle_prepare_turn(args: argparse.Namespace) -> int:
+    store = L6Store(Path(args.library))
+    report = prepare_recognition_context_from_store(
+        store,
+        args.prompt,
+        access_level=args.access_level,
+    )
+    _write_yaml_if_requested(report, args.report_out)
+    _print_yaml(report)
+    return 0
+
+
+async def _build_deeper_context_report(
+    prompt: str,
+    access_level: str,
+) -> dict[str, Any]:
+    try:
+        context = await query_l2(prompt)
+    except Exception:
+        context = ""
+    return {
+        "prompt": prompt,
+        "access_level": access_level,
+        "context": context,
+        "context_chars": len(context),
+    }
+
+
+def _handle_deeper_context(args: argparse.Namespace) -> int:
+    report = asyncio.run(
+        _build_deeper_context_report(
+            args.prompt,
+            args.access_level,
+        )
+    )
+    _write_yaml_if_requested(report, args.report_out)
+    _print_yaml(report)
+    return 0
+
+
+def _handle_cursor_export(args: argparse.Namespace) -> int:
+    cursor_dir = Path(args.cursor_dir) if args.cursor_dir else None
+    adapter = CursorAdapter(cursor_dir=cursor_dir)
+    manifest = adapter.export_l5(since=_parse_since(args.since))
+    data = filter_manifest_for_access(manifest, access_level=args.access_level)
+    out_path = Path(args.out) if args.out else _default_cursor_l5_path()
+    write_l5_dict(data, out_path)
+    if args.print_manifest:
+        _print_yaml(data)
     return 0
 
 
@@ -572,6 +632,61 @@ def _build_parser() -> argparse.ArgumentParser:
         description="Bourdon CLI",
     )
     subparsers = parser.add_subparsers(dest="command")
+
+    prepare_turn_cmd = subparsers.add_parser(
+        "prepare-turn",
+        help="Return L6 recognition context for a prompt",
+    )
+    prepare_turn_cmd.add_argument("prompt")
+    prepare_turn_cmd.add_argument(
+        "--library",
+        type=Path,
+        default=DEFAULT_LIBRARY_PATH,
+        help=f"Path to agent-library (default: {DEFAULT_LIBRARY_PATH})",
+    )
+    prepare_turn_cmd.add_argument(
+        "--access-level",
+        choices=("public", "team", "private"),
+        default="team",
+    )
+    prepare_turn_cmd.add_argument("--report-out")
+    prepare_turn_cmd.set_defaults(func=_handle_prepare_turn)
+
+    deeper_context_cmd = subparsers.add_parser(
+        "deeper-context",
+        help="Return post-recognition L2 context for a prompt",
+    )
+    deeper_context_cmd.add_argument("prompt")
+    deeper_context_cmd.add_argument(
+        "--access-level",
+        choices=("public", "team", "private"),
+        default="team",
+    )
+    deeper_context_cmd.add_argument("--report-out")
+    deeper_context_cmd.set_defaults(func=_handle_deeper_context)
+
+    cursor = subparsers.add_parser("cursor", help="Cursor-specific commands")
+    cursor_subparsers = cursor.add_subparsers(dest="cursor_command")
+
+    cursor_export_cmd = cursor_subparsers.add_parser(
+        "export",
+        help="Build a Cursor L5 manifest from native SQLite state",
+    )
+    cursor_export_cmd.add_argument("--cursor-dir")
+    cursor_export_cmd.add_argument("--out")
+    cursor_export_cmd.add_argument("--since")
+    cursor_export_cmd.add_argument(
+        "--access-level",
+        choices=("public", "team", "private"),
+        default="team",
+    )
+    cursor_export_cmd.add_argument(
+        "--print",
+        dest="print_manifest",
+        action="store_true",
+        help="Print the exported manifest after writing it.",
+    )
+    cursor_export_cmd.set_defaults(func=_handle_cursor_export)
 
     codex = subparsers.add_parser("codex", help="Codex-specific commands")
     codex_subparsers = codex.add_subparsers(dest="codex_command")

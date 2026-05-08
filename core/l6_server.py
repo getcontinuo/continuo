@@ -38,6 +38,8 @@ Tools exposed
   Roll-up: all agents + sessions + entities relating to one project.
 - ``prepare_recognition_context(prompt, access_level, include_private)``
   Immediate recognition and a bounded prompt-context fragment for turn start.
+- ``get_deeper_context(prompt, access_level, include_private)``
+  Post-recognition L2 context retrieval. Returns empty context when disabled.
 """
 
 from __future__ import annotations
@@ -50,6 +52,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from core.l2 import query_l2
 from core.l6_store import DEFAULT_LIBRARY_PATH, L6Store
 from core.recognition_runtime import recognition_first
 
@@ -155,6 +158,25 @@ def prepare_recognition_context_from_store(
         "recognition_latency_us": round(latency_us, 1),
         "hydration_scheduled": hydration_scheduled,
         "prompt_context": _recognition_prompt_context(result),
+    }
+
+
+async def get_deeper_context_for_prompt(
+    prompt: str,
+    access_level: str = "team",
+    include_private: bool = False,
+) -> dict[str, Any]:
+    try:
+        context = await query_l2(prompt)
+    except Exception as exc:  # noqa: BLE001 -- deeper context must not crash a turn
+        logger.warning("L2 deeper context failed: %s", exc)
+        context = ""
+    return {
+        "prompt": prompt,
+        "access_level": access_level,
+        "include_private": include_private,
+        "context": context,
+        "context_chars": len(context),
     }
 
 
@@ -355,6 +377,26 @@ def create_l6_server(store: L6Store, name: str = "bourdon-l6") -> Any:
         """
         return prepare_recognition_context_from_store(
             store,
+            prompt,
+            access_level=access_level,
+            include_private=include_private,
+        )
+
+    @mcp.tool()
+    async def get_deeper_context(
+        prompt: str,
+        access_level: str = "team",
+        include_private: bool = False,
+    ) -> dict:
+        """
+        Return post-recognition L2 context for the prompt.
+
+        This companion tool is intentionally separate from
+        ``prepare_recognition_context`` so immediate recognition never waits on
+        retrieval. If L2 is disabled or unavailable, the returned context is
+        empty.
+        """
+        return await get_deeper_context_for_prompt(
             prompt,
             access_level=access_level,
             include_private=include_private,

@@ -99,6 +99,10 @@ async def _run(args: argparse.Namespace) -> int:
             "prepare_recognition_context",
             {"prompt": args.recognition_prompt, "access_level": "team"},
         )
+        deeper_result = await session.call_tool(
+            "get_deeper_context",
+            {"prompt": args.recognition_prompt, "access_level": "team"},
+        )
 
         print("TOOLS:", ", ".join(sorted(tool_names)))
         for label, result in [
@@ -107,6 +111,7 @@ async def _run(args: argparse.Namespace) -> int:
             ("QUERY_AGENT_MEMORY_RAW", query_result),
             ("LIST_RECENT_WORK_RAW", recent_result),
             ("PREPARE_RECOGNITION_CONTEXT_RAW", recognition_result),
+            ("GET_DEEPER_CONTEXT_RAW", deeper_result),
         ]:
             print(f"{label}:")
             for item in result.content:
@@ -118,17 +123,20 @@ async def _run(args: argparse.Namespace) -> int:
         query_payload = _first_json_payload(query_result)
         recent_payload = _first_json_payload(recent_result)
         recognition_payload = _first_json_payload(recognition_result)
+        deeper_payload = _first_json_payload(deeper_result)
         report["payloads"] = {
             "find_entity": find_payload,
             "get_cross_agent_summary": summary_payload,
             "query_agent_memory": query_payload,
             "list_recent_work": recent_payload,
             "prepare_recognition_context": recognition_payload,
+            "get_deeper_context": deeper_payload,
         }
 
         if args.assertions:
             required_tools = {
                 "find_entity",
+                "get_deeper_context",
                 "get_cross_agent_summary",
                 "list_recent_work",
                 "prepare_recognition_context",
@@ -200,6 +208,13 @@ async def _run(args: argparse.Namespace) -> int:
                 raise AssertionError(
                     "prepare_recognition_context response is missing prompt_context."
                 )
+
+            deeper_context_check = "context" in deeper_payload
+            report["checks"]["get_deeper_context_has_context_field"] = (
+                deeper_context_check
+            )
+            if not deeper_context_check:
+                raise AssertionError("get_deeper_context response is missing context.")
 
     if args.json_report:
         report_path = Path(args.json_report)

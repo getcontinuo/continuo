@@ -9,6 +9,7 @@ from pathlib import Path
 
 import yaml
 
+import cli.main as cli_main
 from cli.main import main
 
 
@@ -167,6 +168,197 @@ def _build_fake_codex_state_db(fake_home: Path) -> None:
                 "You've hit your usage limit.",
             ),
         )
+
+
+def _write_l5_manifest(library: Path, agent_id: str, entities: list[dict]) -> Path:
+    path = library / "agents" / f"{agent_id}.l5.yaml"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    manifest = {
+        "spec_version": "0.1",
+        "agent": {"id": agent_id, "type": "code-assistant"},
+        "last_updated": "2026-05-08T12:00:00+00:00",
+        "known_entities": entities,
+        "recent_sessions": [],
+    }
+    path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
+    return path
+
+
+def _build_fake_cursor_dir(tmp_path: Path) -> Path:
+    cursor_dir = tmp_path / "Cursor"
+    db_path = cursor_dir / "User" / "workspaceStorage" / "abc123" / "state.vscdb"
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    with sqlite3.connect(db_path) as conn:
+        conn.execute("CREATE TABLE ItemTable (key TEXT PRIMARY KEY, value TEXT)")
+        conn.execute(
+            "INSERT INTO ItemTable (key, value) VALUES (?, ?)",
+            (
+                "composer.composerData",
+                json.dumps(
+                    {
+                        "workspacePath": "/Users/dev/projects/bourdon",
+                        "title": "Wire Bourdon recognition",
+                        "messages": [],
+                        "lastUpdatedAt": "2026-05-08T12:00:00Z",
+                    }
+                ),
+            ),
+        )
+    return cursor_dir
+
+
+def test_cli_prepare_turn_returns_l6_recognition_from_merged_agents(tmp_path, capsys):
+    library = tmp_path / "agent-library"
+    _write_l5_manifest(
+        library,
+        "claude-code",
+        [
+            {
+                "name": "Bourdon",
+                "type": "topic",
+                "summary": "Claude planning context.",
+                "visibility": "team",
+            }
+        ],
+    )
+    _write_l5_manifest(
+        library,
+        "codex",
+        [
+            {
+                "name": "Bourdon",
+                "type": "topic",
+                "summary": "Codex implementation context.",
+                "visibility": "team",
+            }
+        ],
+    )
+
+    exit_code = main(
+        [
+            "prepare-turn",
+            "Can we keep working on Bourdon?",
+            "--library",
+            str(library),
+        ]
+    )
+    report = yaml.safe_load(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert report["recognition"] == "Oh -- Bourdon, the topic."
+    assert report["matched_entities"] == [
+        {
+            "name": "Bourdon",
+            "type": "topic",
+            "source_agents": ["claude-code", "codex"],
+        }
+    ]
+    assert "Bourdon recognition context" in report["prompt_context"]
+    assert "via claude-code, codex" in report["prompt_context"]
+
+
+def test_cli_prepare_turn_returns_empty_context_on_no_match(tmp_path, capsys):
+    library = tmp_path / "agent-library"
+    _write_l5_manifest(
+        library,
+        "codex",
+        [{"name": "Bourdon", "type": "topic", "visibility": "team"}],
+    )
+
+    exit_code = main(
+        [
+            "prepare-turn",
+            "What is the weather?",
+            "--library",
+            str(library),
+        ]
+    )
+    report = yaml.safe_load(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert report["recognition"] == ""
+    assert report["matched_entities"] == []
+    assert report["prompt_context"] == ""
+
+
+def test_cli_cursor_export_writes_schema_valid_manifest(tmp_path, capsys):
+    import jsonschema
+
+    cursor_dir = _build_fake_cursor_dir(tmp_path)
+    out_path = tmp_path / "agent-library" / "agents" / "cursor.l5.yaml"
+
+    exit_code = main(
+        [
+            "cursor",
+            "export",
+            "--cursor-dir",
+            str(cursor_dir),
+            "--out",
+            str(out_path),
+        ]
+    )
+    capsys.readouterr()
+    manifest = yaml.safe_load(out_path.read_text(encoding="utf-8"))
+    schema = json.loads(
+        (Path(__file__).parent.parent / "spec" / "L5_schema.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    assert exit_code == 0
+    assert manifest["agent"]["id"] == "cursor"
+    assert any(entity["name"] == "bourdon" for entity in manifest["known_entities"])
+    jsonschema.validate(instance=manifest, schema=schema)
+
+
+def test_cli_cursor_export_print_still_writes_file(tmp_path, capsys):
+    cursor_dir = _build_fake_cursor_dir(tmp_path)
+    out_path = tmp_path / "agent-library" / "agents" / "cursor.l5.yaml"
+
+    exit_code = main(
+        [
+            "cursor",
+            "export",
+            "--cursor-dir",
+            str(cursor_dir),
+            "--out",
+            str(out_path),
+            "--print",
+        ]
+    )
+    printed = yaml.safe_load(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert out_path.is_file()
+    assert printed["agent"]["id"] == "cursor"
+
+
+def test_cli_deeper_context_returns_empty_when_l2_disabled(monkeypatch, capsys):
+    async def disabled_query_l2(prompt):
+        return ""
+
+    monkeypatch.setattr(cli_main, "query_l2", disabled_query_l2)
+
+    exit_code = main(["deeper-context", "Tell me about Bourdon"])
+    report = yaml.safe_load(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert report["context"] == ""
+    assert report["context_chars"] == 0
+
+
+def test_cli_deeper_context_returns_l2_text_with_fake_query(monkeypatch, capsys):
+    async def fake_query_l2(prompt):
+        return f"Hydrated detail for {prompt}."
+
+    monkeypatch.setattr(cli_main, "query_l2", fake_query_l2)
+
+    exit_code = main(["deeper-context", "Bourdon"])
+    report = yaml.safe_load(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert report["context"] == "Hydrated detail for Bourdon."
+    assert report["context_chars"] == len("Hydrated detail for Bourdon.")
 
 
 def test_cli_codex_export_writes_manifest(tmp_path, monkeypatch):
