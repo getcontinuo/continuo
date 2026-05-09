@@ -151,10 +151,11 @@ ai: replies.         ai: replies.</pre>
         recognition runtime, and the three runtime layers (Layer A backend-neutral
         inference protocol, Layer B interrupt-first symmetric primitive, Layer C
         KV-cache-aware splice). Three shipping IDE adapters (Claude Code, Codex,
-        Cursor) plus native publishers for Clyde and Clair. The Codex operational
-        layer (memory doctor + fallback recognition + L6 prep) ships in v0.3.0;
-        the recognition-first runtime is wired into a live agent and measured
-        end-to-end.
+        Cursor) plus native publishers for Clyde and Clair, and a zero-code MCP
+        integration with <a href="https://github.com/getbourdon/bourdon/blob/main/docs/integrations/openmanus.md">OpenManus</a>.
+        The Codex operational layer (memory doctor + fallback recognition + L6
+        prep) ships in v0.3.0; the recognition-first runtime is wired into a
+        live agent and measured end-to-end.
       </p>
       <p class="note">
         <strong>Free for solo developers, internal use, research, and
