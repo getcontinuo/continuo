@@ -39,3 +39,21 @@ Status: blocked pending confirmed native memory store path/schema.
   known.
 - Until then, Cline can consume Bourdon through the generic MCP or shell
   surfaces: `prepare_recognition_context` or `bourdon prepare-turn`.
+
+## OpenManus
+
+Status: zero-code MCP integration — OpenManus consumes Bourdon's L6 server as
+an MCP source.
+
+- OpenManus is MCP-native (`Manus.mcp_clients`, `config/mcp.json` schema).
+- Add a `bourdon` entry to OpenManus's `config/mcp.json` pointing at
+  `python -m core.l6_server` (stdio) — see
+  [`docs/integrations/openmanus.md`](integrations/openmanus.md) for the literal
+  config block and walkthrough.
+- After wiring, the OpenManus agent gets all six L6 tools
+  (`query_agent_memory`, `list_recent_work`, `find_entity`,
+  `get_cross_agent_summary`, `prepare_recognition_context`,
+  `get_deeper_context`) plus the `agent-library://` resources.
+- OpenManus currently consumes Bourdon but does not publish into it. A future
+  Python adapter (per `docs/AUTHORING_AN_ADAPTER.md`) would close the loop once
+  OpenManus's distilled-memory model stabilizes upstream.
