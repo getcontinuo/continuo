@@ -37,7 +37,7 @@ The BSL Additional Use Grant defines "competitive offering" specifically: a prod
 ### ⚠️ I'm Anthropic / OpenAI / Google / a major AI vendor and want to integrate Bourdon natively into my product
 This is where you'd want to talk to RADLAB LLC. Native integration into a paid AI product *probably* counts as embedding under the BSL definition. A commercial license is straightforward to negotiate.
 
-Contact: licensing@radlab.online
+Contact: licensing@bourdon.ai
 
 ### ⚠️ I'm running a managed Bourdon hosted service for paying customers
 Commercial license needed. Same contact as above.
@@ -67,9 +67,9 @@ True that BSL 1.1 isn't on the OSI-approved list, but it's source-available and 
 Some enterprise software policies are written against AGPL (a different copyleft license) and don't actually cover BSL. Worth checking with your legal team — most BSL projects have been accepted in environments that ban AGPL.
 
 ### "What if I'm not sure whether my use is 'competitive'?"
-Email licensing@radlab.online with a description of what you're building. RADLAB LLC will give you a written interpretation. Better to ask than to guess.
+Email licensing@bourdon.ai with a description of what you're building. RADLAB LLC will give you a written interpretation. Better to ask than to guess.
 
 ## Contact
 
-Licensing questions: **licensing@radlab.online**
+Licensing questions: **licensing@bourdon.ai**
 General project questions: GitHub issues at [github.com/getbourdon/bourdon/issues](https://github.com/getbourdon/bourdon/issues)
