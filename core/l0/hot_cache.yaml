@@ -33,8 +33,8 @@ projects:
     stack: ["OpenAI Agents SDK", "Ollama", "UltraRAG 3.0"]
     priority: 1
 
-  - name: "Continuo"
-    full_name: "Continuo Memory Architecture"
+  - name: "Bourdon"
+    full_name: "Bourdon Memory Architecture"
     status: "speccing"
     type: "Tiered human-inspired memory layer"
     priority: 1
@@ -79,7 +79,7 @@ entities:
     type: "project"
   - keyword: "Clyde"
     type: "project"
-  - keyword: "Continuo"
+  - keyword: "Bourdon"
     type: "concept"
   - keyword: "Coolculator"
     type: "project"
@@ -103,8 +103,8 @@ entities:
     type: "project"
 
 current_focus:
-  primary: "Building Continuo — tiered memory architecture for Clyde"
+  primary: "Building Bourdon — tiered memory architecture for Clyde"
   secondary: "ILTT app store approval"
   hardware: "A100 PCIe 80GB evaluation"
   last_session: "2026-04-14"
-  last_topic: "Designed Continuo L0-L4 memory spec, confirmed UltraRAG async compatibility"
+  last_topic: "Designed Bourdon L0-L4 memory spec, confirmed UltraRAG async compatibility"

@@ -1,5 +1,5 @@
 """
-Continuo Memory Orchestrator -- Phase 1
+Bourdon Memory Orchestrator -- Phase 1
 =========================================
 Tiered human-inspired memory for Clyde (Ollama + OpenAI Agents SDK)
 
@@ -67,7 +67,7 @@ Known Entities: {', '.join(keywords)}"""
 
     tokens = estimate_tokens(context)
     if tokens > L0_TOKEN_BUDGET:
-        print(f"[Continuo] [WARN]L0 over budget: {tokens} tokens (max {L0_TOKEN_BUDGET})")
+        print(f"[Bourdon] [WARN]L0 over budget: {tokens} tokens (max {L0_TOKEN_BUDGET})")
 
     return context, keywords
 
@@ -128,7 +128,7 @@ async def load_l1_parallel(entities: list[str]) -> str:
         chunk_tokens = estimate_tokens(chunk)
 
         if total_tokens + chunk_tokens > L1_TOKEN_BUDGET:
-            print(f"[Continuo] [WARN]L1 budget reached -- skipping: {entity}")
+            print(f"[Bourdon] [WARN]L1 budget reached -- skipping: {entity}")
             break
 
         combined += chunk
@@ -143,7 +143,7 @@ async def query_l2_ultrarag(query: str, config=None) -> str:
     L2 -- UltraRAG-backed async retrieval.
 
     Delegates to :func:`core.l2.query_l2` which reads config from the bundled
-    YAML file (``core/l2_config.yaml``) plus any ``CONTINUO_L2_*`` env-var
+    YAML file (``core/l2_config.yaml``) plus any ``BOURDON_L2_*`` env-var
     overrides. Returns an empty string when L2 is disabled (the default) or
     when the retriever is unreachable -- never raises, so this call can't
     crash a session.
@@ -183,12 +183,12 @@ def build_system_prompt(
 
 # -- MAIN ORCHESTRATOR ---------------------------------------------------------
 
-class Continuo:
+class Bourdon:
     """
     Phase 1 Memory Orchestrator for Clyde.
 
     Usage:
-        memory = Continuo()
+        memory = Bourdon()
         system_prompt = await memory.prepare(
             user_message="let's work on Clyde today",
             base_instructions="You are Clyde, a local AI swarm assistant."
@@ -210,7 +210,7 @@ class Continuo:
         self._l2_task: Optional[asyncio.Task] = None
         self._l2_result: str = ""
         self._l2_config = l2_config
-        print(f"[Continuo] [OK] L0 loaded -- {len(self.keywords)} entities in hot cache")
+        print(f"[Bourdon] [OK] L0 loaded -- {len(self.keywords)} entities in hot cache")
 
     async def prepare(self, user_message: str, base_instructions: str) -> str:
         """
@@ -231,9 +231,9 @@ class Continuo:
         # Detect which entities the user mentioned
         matched_entities = detect_entities(user_message, self.keywords)
         if matched_entities:
-            print(f"[Continuo] [HIT] L0 hits: {matched_entities}")
+            print(f"[Bourdon] [HIT] L0 hits: {matched_entities}")
         else:
-            print(f"[Continuo] [MISS] No L0 hits -- using base context only")
+            print(f"[Bourdon] [MISS] No L0 hits -- using base context only")
 
         # Fire L1 + L2 in parallel
         l1_task = asyncio.create_task(load_l1_parallel(matched_entities))
@@ -248,11 +248,11 @@ class Continuo:
                 timeout=L1_LOAD_TIMEOUT
             )
         except asyncio.TimeoutError:
-            print(f"[Continuo] [WARN]L1 timeout -- proceeding with L0 only")
+            print(f"[Bourdon] [WARN]L1 timeout -- proceeding with L0 only")
             l1_context = ""
 
         t_l1 = time.monotonic() - t_start
-        print(f"[Continuo] [INFO] L1 ready in {t_l1:.3f}s -- "
+        print(f"[Bourdon] [INFO] L1 ready in {t_l1:.3f}s -- "
               f"{estimate_tokens(l1_context)} tokens")
 
         # L2 keeps running in background
@@ -268,7 +268,7 @@ class Continuo:
         if self._l2_task is None:
             return ""
         if not self._l2_task.done():
-            print("[Continuo] [WAIT] L2 still loading -- skipping for this turn")
+            print("[Bourdon] [WAIT] L2 still loading -- skipping for this turn")
             return ""
         result = self._l2_task.result()
         self._l2_result = result
@@ -277,22 +277,22 @@ class Continuo:
     def reload_l0(self):
         """Hot-reload L0 from disk without restarting. Call after editing hot_cache.yaml."""
         self.l0_context, self.keywords = load_l0()
-        print(f"[Continuo] [RELOAD] L0 reloaded -- {len(self.keywords)} entities")
+        print(f"[Bourdon] [RELOAD] L0 reloaded -- {len(self.keywords)} entities")
 
 # -- CLI TEST ------------------------------------------------------------------
 
 async def _test():
     """Quick smoke test -- run with: python orchestrator.py"""
-    print("\n=== Continuo Phase 1 -- Smoke Test ===\n")
+    print("\n=== Bourdon Phase 1 -- Smoke Test ===\n")
 
-    memory = Continuo()
+    memory = Bourdon()
 
     base = "You are Clyde, Ryan's local AI assistant. Be direct, technical, and momentum-driven."
 
     test_messages = [
         "Let's work on Clyde today",
         "How is ILTT doing?",
-        "What's the status of Continuo?",
+        "What's the status of Bourdon?",
         "What's the weather like?",  # No L0 hit -- should use base only
     ]
 

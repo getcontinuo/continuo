@@ -1,4 +1,4 @@
-# Show HN draft — Continuo
+# Show HN draft — Bourdon
 
 **Status:** Draft, written 2026-04-27. Not yet posted.
 
@@ -7,17 +7,17 @@ sober prose-driven than Twitter, so the draft reads accordingly.
 
 **Posting account:** Ry's HN account.
 
-**Submit URL field:** `https://continuo.cloud`
+**Submit URL field:** `https://bourdon.ai`
 
 ---
 
 ## Title
 
-> Show HN: Continuo – recognition-first memory for AI agents
+> Show HN: Bourdon – recognition-first memory for AI agents
 
 (Original draft was longer; HN's 80-char title limit pushed us to the
 tighter version, which is also more direct:)
-> Show HN: Continuo – memory framework for AI agents that fixes the
+> Show HN: Bourdon – memory framework for AI agents that fixes the
 > call-and-repeat problem
 
 ---
@@ -34,7 +34,7 @@ converter project" in 200ms and filled in the rest while talking. The
 *shape* of the response is what makes a memory-enabled agent feel like a
 mind versus a database that talks.
 
-That gap is what Continuo is trying to close. It's not a better RAG. It's a
+That gap is what Bourdon is trying to close. It's not a better RAG. It's a
 runtime timing layer.
 
 The model is L0–L6:
@@ -56,11 +56,11 @@ Descent only when needed.
 Status: pre-alpha v0.0.7, MIT, 250 tests passing. Adapters shipped for
 Claude Code and Codex. Native publisher for a local AI swarm. Recognition-
 first runtime exists as a Python module that fires in 24 microseconds
-average (measured by `continuo codex eval --recognition`); integrating
+average (measured by `bourdon codex eval --recognition`); integrating
 it into a live agent's response loop is the open empirical test.
 
 I'm explicitly NOT competing with mem0, Zep (Graphiti), or Letta — those
-solve representation and retrieval well. Continuo is the timing layer that
+solve representation and retrieval well. Bourdon is the timing layer that
 could sit on top of any of them. Spec/RELATED_WORK.md in the repo maps the
 overlap.
 
@@ -80,9 +80,9 @@ Most-wanted feedback:
      production deployments, etc.) — what's the honest failure mode you
      ran into that this framing might be missing?
 
-Repo: https://github.com/getcontinuo/continuo
-Thesis (3 falsifiability conditions): https://github.com/getcontinuo/continuo/blob/main/spec/POSITIONING.md
-Live findings journal: https://github.com/getcontinuo/continuo/blob/main/spec/FINDINGS_JOURNAL.md
+Repo: https://github.com/getbourdon/bourdon
+Thesis (3 falsifiability conditions): https://github.com/getbourdon/bourdon/blob/main/spec/POSITIONING.md
+Live findings journal: https://github.com/getbourdon/bourdon/blob/main/spec/FINDINGS_JOURNAL.md
 
 Built in public. Honest about being pre-alpha. Genuinely interested in being
 falsified.
@@ -100,7 +100,7 @@ falsified.
 
 **Don't post if:**
 - The Twitter thread is still in its first 30 min — let one fire alone first
-- continuo.cloud is not actually serving content (verify with curl before
+- bourdon.ai is not actually serving content (verify with curl before
   hitting submit)
 - The repo's main README still mentions "early-alpha v0.0.7" with broken
   links

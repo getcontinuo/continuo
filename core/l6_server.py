@@ -1,5 +1,5 @@
 """
-Continuo L6 -- MCP server.
+Bourdon L6 -- MCP server.
 
 Wraps :class:`core.l6_store.L6Store` in a fastmcp server so any MCP-aware
 agent (Claude Code, Codex, Cursor, Copilot-next-gen) can query the
@@ -7,7 +7,7 @@ federation natively without framework-specific integration.
 
 Requires the ``[server]`` optional extra::
 
-    pip install 'continuo-memory[server]'
+    pip install 'bourdon[server]'
 
 Launch::
 
@@ -58,7 +58,7 @@ def _require_fastmcp():
     except ImportError as exc:
         raise ImportError(
             "fastmcp is required to run the L6 server. "
-            "Install with: pip install 'continuo-memory[server]'"
+            "Install with: pip install 'bourdon[server]'"
         ) from exc
     return FastMCP
 
@@ -66,7 +66,7 @@ def _require_fastmcp():
 # -- Server construction -------------------------------------------------------
 
 
-def create_l6_server(store: L6Store, name: str = "continuo-l6") -> Any:
+def create_l6_server(store: L6Store, name: str = "bourdon-l6") -> Any:
     """
     Build a FastMCP server exposing L6 resources + tools over the given store.
 
@@ -256,8 +256,8 @@ def create_l6_server(store: L6Store, name: str = "continuo-l6") -> Any:
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        prog="continuo-l6-server",
-        description="Launch the Continuo L6 federation MCP server.",
+        prog="bourdon-l6-server",
+        description="Launch the Bourdon L6 federation MCP server.",
     )
     parser.add_argument(
         "--library",
@@ -284,7 +284,7 @@ def main() -> None:
     args = _parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     logger.info(
-        "Continuo L6 server starting -- library=%s, transport=%s",
+        "Bourdon L6 server starting -- library=%s, transport=%s",
         args.library,
         args.transport,
     )

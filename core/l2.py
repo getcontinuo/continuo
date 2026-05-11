@@ -1,5 +1,5 @@
 """
-Continuo L2 -- Episodic Memory async retrieval.
+Bourdon L2 -- Episodic Memory async retrieval.
 
 L2 is the third layer of the memory stack. It fires concurrent with the AI's
 first response tokens and is expected to complete during the human's reading +
@@ -12,7 +12,7 @@ This module provides:
 - ``L2Client``: Protocol for retriever clients (makes the module testable
   without a real UltraRAG instance)
 - ``FastMCPL2Client``: production client backed by ``fastmcp.Client``
-  (requires ``pip install 'continuo-memory[ultrarag]'``)
+  (requires ``pip install 'bourdon[ultrarag]'``)
 - ``query_l2()``: the single entry point; swallows all errors and returns
   empty string on failure so L2 can never crash a session
 
@@ -71,7 +71,7 @@ class L2Config:
     Load order (later overrides earlier):
         1. Dataclass defaults (this class)
         2. YAML file (if provided via from_yaml())
-        3. Environment variables (CONTINUO_L2_*)
+        3. Environment variables (BOURDON_L2_*)
     """
 
     enabled: bool = False
@@ -111,30 +111,30 @@ class L2Config:
 
     @staticmethod
     def _apply_env_overrides(cfg: "L2Config") -> "L2Config":
-        """Apply any CONTINUO_L2_* env vars on top of the given config."""
+        """Apply any BOURDON_L2_* env vars on top of the given config."""
         updates: dict = {}
-        if "CONTINUO_L2_ENABLED" in os.environ:
-            parsed = _parse_bool(os.environ["CONTINUO_L2_ENABLED"])
+        if "BOURDON_L2_ENABLED" in os.environ:
+            parsed = _parse_bool(os.environ["BOURDON_L2_ENABLED"])
             if parsed is not None:
                 updates["enabled"] = parsed
-        if "CONTINUO_L2_ENDPOINT" in os.environ:
-            updates["endpoint"] = os.environ["CONTINUO_L2_ENDPOINT"]
-        if "CONTINUO_L2_TOOL" in os.environ:
-            updates["tool_name"] = os.environ["CONTINUO_L2_TOOL"]
-        if "CONTINUO_L2_TOP_K" in os.environ:
+        if "BOURDON_L2_ENDPOINT" in os.environ:
+            updates["endpoint"] = os.environ["BOURDON_L2_ENDPOINT"]
+        if "BOURDON_L2_TOOL" in os.environ:
+            updates["tool_name"] = os.environ["BOURDON_L2_TOOL"]
+        if "BOURDON_L2_TOP_K" in os.environ:
             try:
-                updates["top_k"] = int(os.environ["CONTINUO_L2_TOP_K"])
+                updates["top_k"] = int(os.environ["BOURDON_L2_TOP_K"])
             except ValueError:
                 logger.warning(
-                    "Invalid CONTINUO_L2_TOP_K=%s, ignoring", os.environ["CONTINUO_L2_TOP_K"]
+                    "Invalid BOURDON_L2_TOP_K=%s, ignoring", os.environ["BOURDON_L2_TOP_K"]
                 )
-        if "CONTINUO_L2_TIMEOUT" in os.environ:
+        if "BOURDON_L2_TIMEOUT" in os.environ:
             try:
-                updates["timeout_seconds"] = float(os.environ["CONTINUO_L2_TIMEOUT"])
+                updates["timeout_seconds"] = float(os.environ["BOURDON_L2_TIMEOUT"])
             except ValueError:
                 logger.warning(
-                    "Invalid CONTINUO_L2_TIMEOUT=%s, ignoring",
-                    os.environ["CONTINUO_L2_TIMEOUT"],
+                    "Invalid BOURDON_L2_TIMEOUT=%s, ignoring",
+                    os.environ["BOURDON_L2_TIMEOUT"],
                 )
         if not updates:
             return cfg
@@ -233,7 +233,7 @@ class FastMCPL2Client:
         except ImportError as exc:
             raise ImportError(
                 "fastmcp is required for L2 UltraRAG integration. "
-                "Install with: pip install 'continuo-memory[ultrarag]'"
+                "Install with: pip install 'bourdon[ultrarag]'"
             ) from exc
         self._Client = Client
         self.endpoint = endpoint

@@ -13,12 +13,12 @@ Clyde is RADLAB's local AI swarm. A multi-agent system running entirely on local
 - **Hardware target:** NVIDIA A100 PCIe 80GB (evaluating)
 
 ## Current Work
-Upgrading Clyde's memory system. Previous UltraRAG setup was essentially an archive — retrieve-then-respond, no conversational timing. Designing Continuo (L0–L4 tiered memory) to make Clyde feel like it *recognizes* context rather than looking it up.
+Upgrading Clyde's memory system. Previous UltraRAG setup was essentially an archive — retrieve-then-respond, no conversational timing. Designing Bourdon (L0–L4 tiered memory) to make Clyde feel like it *recognizes* context rather than looking it up.
 
 ## Why It Matters
-Clyde is the proving ground for Continuo. If the memory architecture works here, it becomes a standalone open source package for any Ollama-compatible AI stack.
+Clyde is the proving ground for Bourdon. If the memory architecture works here, it becomes a standalone open source package for any Ollama-compatible AI stack.
 
 ## Related
-- Continuo (memory architecture being built for Clyde)
+- Bourdon (memory architecture being built for Clyde)
 - A100 PCIe 80GB (hardware evaluation driving Clyde's future compute)
 - ILTT (Clyde's AI features are part of ILTT's backend)

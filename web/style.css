@@ -1,4 +1,4 @@
-/* Continuo landing page -- 2026-04-27
+/* Bourdon landing page (formerly Bourdon, renamed 2026-05-05)
  *
  * Aesthetic choices:
  *  - Plain HTML+CSS, no JavaScript, no web-font fetch (system font stack).
@@ -192,7 +192,7 @@ footer p.meta {
 
 /* Smaller screens -- table needs to stay readable */
 
-@media (max-width: 600px) {
+@media (max-width: 37.5em) {
   main { padding: 2.5rem 1rem 4rem; }
   h1 { font-size: 2.4rem; }
   table { font-size: 0.85rem; }

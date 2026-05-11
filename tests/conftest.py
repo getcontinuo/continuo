@@ -1,4 +1,4 @@
-"""Shared pytest fixtures for the Continuo test suite."""
+"""Shared pytest fixtures for the Bourdon test suite."""
 
 from __future__ import annotations
 
@@ -47,7 +47,7 @@ def isolated_memory_dirs(tmp_path, monkeypatch):
     def write_l1(name: str, body: str) -> None:
         (l1_dir / f"{name}.md").write_text(body, encoding="utf-8")
 
-    # Seed a minimal, valid L0 so Continuo() can initialize without a TypeError.
+    # Seed a minimal, valid L0 so Bourdon() can initialize without a TypeError.
     write_l0(
         {
             "identity": {
@@ -62,7 +62,7 @@ def isolated_memory_dirs(tmp_path, monkeypatch):
             ],
             "hardware": {"local_model": "Gemma", "inference": "Ollama"},
             "current_focus": {
-                "primary": "Testing Continuo",
+                "primary": "Testing Bourdon",
                 "last_session": "2026-04-15",
                 "last_topic": "unit tests",
             },

@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-Build Continuo-compatible L5 manifests from hybrid short-index memory.
+Build Bourdon-compatible L5 manifests from hybrid short-index memory.
 
 Inputs:
 - Workspace short index: .cursor/memory/short-index.json
 - Global short index: ~/.cursor/memory/short-index.json
 
 Outputs:
-- Workspace manifest: .cursor/memory/continuo.l5.yaml
+- Workspace manifest: .cursor/memory/bourdon.l5.yaml
 - Global manifest: ~/agent-library/agents/cursor.l5.yaml
 """
 
@@ -179,7 +179,7 @@ def _write_yaml(path: Path, payload: dict[str, Any]) -> None:
 
 
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Build Continuo L5 manifests from hybrid memory.")
+    parser = argparse.ArgumentParser(description="Build Bourdon L5 manifests from hybrid memory.")
     parser.add_argument("--workspace-root", type=Path, required=True)
     parser.add_argument("--global-root", type=Path, default=Path.home() / ".cursor" / "memory")
     parser.add_argument("--workspace-out", type=Path, default=None)
@@ -190,7 +190,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--agent-id", default="cursor")
     parser.add_argument(
         "--role-narrative",
-        default="Cursor memory maintainer for hybrid short/long memory chains and Continuo federation exports.",
+        default="Cursor memory maintainer for hybrid short/long memory chains and Bourdon federation exports.",
     )
     return parser.parse_args()
 
@@ -199,7 +199,7 @@ def main() -> int:
     args = _parse_args()
     workspace_index_path = args.workspace_root / ".cursor" / "memory" / "short-index.json"
     global_index_path = args.global_root / "short-index.json"
-    workspace_out = args.workspace_out or (args.workspace_root / ".cursor" / "memory" / "continuo.l5.yaml")
+    workspace_out = args.workspace_out or (args.workspace_root / ".cursor" / "memory" / "bourdon.l5.yaml")
 
     workspace_payload = _read_json_file(workspace_index_path)
     global_payload = _read_json_file(global_index_path)

@@ -1,5 +1,5 @@
 """
-Continuo L5 I/O -- atomic write + read helpers for L5 manifests.
+Bourdon L5 I/O -- atomic write + read helpers for L5 manifests.
 
 Writing is done via tmp-file + atomic rename so readers (e.g., the L6Store
 file watcher in future versions) never observe a half-written manifest.

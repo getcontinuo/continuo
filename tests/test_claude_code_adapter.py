@@ -11,7 +11,7 @@ import yaml
 
 from adapters.base import (
     AdapterDiscoveryError,
-    ContinuoAdapter,
+    BourdonAdapter,
     Entity,
     HealthStatus,
     L5Manifest,
@@ -101,7 +101,7 @@ def isolated_home(tmp_path, monkeypatch):
 
 def test_adapter_satisfies_protocol(isolated_home):
     adapter = ClaudeCodeAdapter()
-    assert isinstance(adapter, ContinuoAdapter)
+    assert isinstance(adapter, BourdonAdapter)
 
 
 def test_adapter_exposes_expected_constants():

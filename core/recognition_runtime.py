@@ -1,5 +1,5 @@
 """
-Continuo recognition-first runtime.
+Bourdon recognition-first runtime.
 
 Emits an immediate recognition response from the L0 / known-entities surface
 and concurrently kicks off L1 hydration. The recognition string is computed

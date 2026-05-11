@@ -1,9 +1,9 @@
-# Twitter / X thread — Continuo launch
+# Twitter / X thread — Bourdon launch
 
 **Status:** Draft, written 2026-04-27. Not yet posted.
 
 **When to post:** After the Cloudflare custom domain is bound and
-`https://continuo.cloud` is reachable. The thread links to the landing page,
+`https://bourdon.ai` is reachable. The thread links to the landing page,
 not the workers.dev subdomain.
 
 **Account:** Ry's main / RADMAN handle.
@@ -51,7 +51,7 @@ context, not for engagement-bait.
 
 ## Tweet 4 / The architecture
 
-> Continuo's timing model:
+> Bourdon's timing model:
 >
 >  L0  hot cache       → recognition (always loaded)
 >  L1  entity synopses → hydration (parallel-loaded)
@@ -64,11 +64,11 @@ context, not for engagement-bait.
 
 ## Tweet 5 / Not competing with the field
 
-> Continuo isn't competing with @mem0ai @zep_ai @letta_inc — those
+> Bourdon isn't competing with @mem0ai @zep_ai @letta_inc — those
 > frameworks solve representation + retrieval really well.
 >
-> Continuo is the *runtime timing layer* that can sit on top of any of
-> them. Mem0's store + Continuo's timing = memory that feels like a
+> Bourdon is the *runtime timing layer* that can sit on top of any of
+> them. Mem0's store + Bourdon's timing = memory that feels like a
 > mind, not a database.
 
 ---
@@ -89,9 +89,9 @@ context, not for engagement-bait.
 
 ## Tweet 7 / CTA
 
-> Read the thesis: https://continuo.cloud
+> Read the thesis: https://bourdon.ai
 >
-> Code: https://github.com/getcontinuo/continuo
+> Code: https://github.com/getbourdon/bourdon
 >
 > Most-wanted: adapters for Cursor + Cline, integration of the
 > recognition runtime into a real agent's response loop, and honest

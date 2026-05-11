@@ -1,9 +1,9 @@
 # Getting Started: Memory Cycle
 
-This guide runs Continuo's hybrid memory loop end-to-end:
+This guide runs Bourdon's hybrid memory loop end-to-end:
 
 1. Build/merge hybrid memory chain indices.
-2. Export Continuo-compatible L5 manifests.
+2. Export Bourdon-compatible L5 manifests.
 3. Run MCP smoke assertions against the L6 server.
 4. Emit machine-readable JSON reports for CI.
 
@@ -15,7 +15,7 @@ This guide runs Continuo's hybrid memory loop end-to-end:
 ## One-time setup
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/bootstrap-continuo-mcp.ps1 -WorkspaceRoot "."
+powershell -ExecutionPolicy Bypass -File scripts/bootstrap-bourdon-mcp.ps1 -WorkspaceRoot "."
 ```
 
 This creates:
@@ -35,10 +35,10 @@ Add at least one entry to `.cursor/memory/short-index.json`:
   "version": 1,
   "entries": [
     {
-      "topic_key": "continuo_mcp",
-      "topic_name": "Continuo MCP",
-      "summary": "Workspace-specific Continuo MCP wiring and retrieval checks.",
-      "triggers": ["continuo", "continuo mcp", "l6 server"],
+      "topic_key": "bourdon_mcp",
+      "topic_name": "Bourdon MCP",
+      "summary": "Workspace-specific Bourdon MCP wiring and retrieval checks.",
+      "triggers": ["bourdon", "bourdon mcp", "l6 server"],
       "scope": "workspace",
       "access_level": "team",
       "last_updated": "2026-05-01",
@@ -56,7 +56,7 @@ powershell -ExecutionPolicy Bypass -File scripts/run_memory_cycle.ps1 -Workspace
 
 ## Outputs
 
-- Workspace L5: `.cursor/memory/continuo.l5.yaml`
+- Workspace L5: `.cursor/memory/bourdon.l5.yaml`
 - Global L5: `~/agent-library/agents/cursor.l5.yaml`
 - MCP report: `.cursor/memory/reports/mcp-smoke-report.json`
 - Cycle report: `.cursor/memory/reports/memory-cycle-report.json`

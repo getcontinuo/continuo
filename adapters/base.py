@@ -1,10 +1,10 @@
 """
-Continuo adapter base -- Protocol + dataclasses + exceptions.
+Bourdon adapter base -- Protocol + dataclasses + exceptions.
 
 See spec/ADAPTER_CONTRACT.md for the full adapter contract.
 See spec/L5_schema.json for the normative L5 manifest schema.
 
-Version: contract v0.1 (tied to Continuo spec v0.1)
+Version: contract v0.1 (tied to Bourdon spec v0.1)
 """
 
 from __future__ import annotations
@@ -146,7 +146,7 @@ class AgentStore:
 
 @dataclass
 class HealthStatus:
-    """Returned by health_check(). Used by `continuo doctor` CLI."""
+    """Returned by health_check(). Used by `bourdon doctor` CLI."""
 
     status: str  # "ok" | "degraded" | "blocked"
     reason: Optional[str] = None
@@ -156,7 +156,7 @@ class HealthStatus:
 # -- Protocol ------------------------------------------------------------------
 
 @runtime_checkable
-class ContinuoAdapter(Protocol):
+class BourdonAdapter(Protocol):
     """
     Protocol that every adapter (native publisher or external adapter) must satisfy.
 

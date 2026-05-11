@@ -1,5 +1,5 @@
 """
-Continuo inference backend protocol -- the contract every local-inference
+Bourdon inference backend protocol -- the contract every local-inference
 adapter must implement.
 
 This module is deliberately backend-neutral. It exists because the
@@ -100,7 +100,7 @@ class BackendCapabilities:
     --------------------
     streaming
         ``stream_completion`` yields tokens incrementally. Required for
-        any Continuo use -- recognition-first depends on model response
+        any Bourdon use -- recognition-first depends on model response
         streaming concurrent with L1 hydration.
     cancel
         ``cancel(slot_id)`` actually stops generation on the named slot.
@@ -232,7 +232,7 @@ def register_backend(
         )
 
     The default required set is ``{"streaming"}`` -- the minimum any
-    Continuo caller needs. Callers requiring more (e.g. interrupt-first
+    Bourdon caller needs. Callers requiring more (e.g. interrupt-first
     needs ``"cancel"``; in-flow splice needs ``"kv_cache_reuse"``) pass
     the extended set.
 

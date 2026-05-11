@@ -81,8 +81,8 @@ def test_config_malformed_yaml_falls_back_gracefully(tmp_path):
 def test_config_env_var_overrides_yaml(tmp_path, monkeypatch):
     path = tmp_path / "l2.yaml"
     path.write_text(yaml.safe_dump({"enabled": False, "top_k": 5}), encoding="utf-8")
-    monkeypatch.setenv("CONTINUO_L2_ENABLED", "true")
-    monkeypatch.setenv("CONTINUO_L2_TOP_K", "20")
+    monkeypatch.setenv("BOURDON_L2_ENABLED", "true")
+    monkeypatch.setenv("BOURDON_L2_TOP_K", "20")
     cfg = L2Config.from_yaml(path)
     assert cfg.enabled is True
     assert cfg.top_k == 20
@@ -91,14 +91,14 @@ def test_config_env_var_overrides_yaml(tmp_path, monkeypatch):
 def test_config_env_var_invalid_int_falls_back(tmp_path, monkeypatch):
     path = tmp_path / "l2.yaml"
     path.write_text(yaml.safe_dump({"top_k": 5}), encoding="utf-8")
-    monkeypatch.setenv("CONTINUO_L2_TOP_K", "not-a-number")
+    monkeypatch.setenv("BOURDON_L2_TOP_K", "not-a-number")
     cfg = L2Config.from_yaml(path)
     # Bad env value should not crash; keep whatever the YAML/default said
     assert cfg.top_k == 5
 
 
 def test_config_env_var_endpoint_override(tmp_path, monkeypatch):
-    monkeypatch.setenv("CONTINUO_L2_ENDPOINT", "http://override.local:1234")
+    monkeypatch.setenv("BOURDON_L2_ENDPOINT", "http://override.local:1234")
     cfg = L2Config.from_yaml(tmp_path / "nope.yaml")
     assert cfg.endpoint == "http://override.local:1234"
 
@@ -259,7 +259,7 @@ async def test_query_l2_missing_fastmcp_returns_empty(monkeypatch):
 async def test_query_l2_with_no_config_loads_default_yaml(monkeypatch):
     """Without explicit config, query_l2 loads from bundled YAML (default disabled)."""
     # Ensure env vars don't accidentally flip it on
-    for var in ("CONTINUO_L2_ENABLED", "CONTINUO_L2_TOP_K", "CONTINUO_L2_ENDPOINT"):
+    for var in ("BOURDON_L2_ENABLED", "BOURDON_L2_TOP_K", "BOURDON_L2_ENDPOINT"):
         monkeypatch.delenv(var, raising=False)
     client = _MockClient(response="SHOULD NOT BE RETURNED")
     # Since bundled config has enabled=false, the default path should return "".
@@ -285,9 +285,9 @@ def test_fastmcp_client_raises_clear_error_when_fastmcp_missing(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_continuo_prepare_uses_provided_l2_config(isolated_memory_dirs):
-    """Continuo() with an l2_config=enabled config should call the L2 layer."""
-    from core.orchestrator import Continuo
+async def test_bourdon_prepare_uses_provided_l2_config(isolated_memory_dirs):
+    """Bourdon() with an l2_config=enabled config should call the L2 layer."""
+    from core.orchestrator import Bourdon
 
     calls = []
 
@@ -308,7 +308,7 @@ async def test_continuo_prepare_uses_provided_l2_config(isolated_memory_dirs):
     original = orch.query_l2_ultrarag
     orch.query_l2_ultrarag = _fake_query_l2_ultrarag
     try:
-        memory = Continuo()
+        memory = Bourdon()
         await memory.prepare("hello Alpha", "Base instructions.")
         # L2 task fires asynchronously; await completion before checking
         l2_result = await memory.get_l2_context()
@@ -319,9 +319,9 @@ async def test_continuo_prepare_uses_provided_l2_config(isolated_memory_dirs):
 
 
 @pytest.mark.asyncio
-async def test_continuo_get_l2_context_handles_unfinished_task(isolated_memory_dirs):
+async def test_bourdon_get_l2_context_handles_unfinished_task(isolated_memory_dirs):
     """get_l2_context() should return empty when the L2 task is still running."""
-    from core.orchestrator import Continuo
+    from core.orchestrator import Bourdon
 
     async def _slow_l2(query: str, config=None):
         await asyncio.sleep(1.0)
@@ -332,7 +332,7 @@ async def test_continuo_get_l2_context_handles_unfinished_task(isolated_memory_d
     original = orch.query_l2_ultrarag
     orch.query_l2_ultrarag = _slow_l2
     try:
-        memory = Continuo()
+        memory = Bourdon()
         await memory.prepare("msg", "Base")
         # L2 task is in flight; asking immediately should not block.
         l2_result_immediate = await memory.get_l2_context()

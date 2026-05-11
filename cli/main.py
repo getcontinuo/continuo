@@ -1,4 +1,4 @@
-"""Top-level `continuo` CLI."""
+"""Top-level `bourdon` CLI."""
 
 from __future__ import annotations
 
@@ -17,10 +17,15 @@ import yaml
 from adapters.base import AdapterDiscoveryError
 from adapters.claude_code import ClaudeCodeAdapter
 from adapters.codex import CodexAdapter
+from adapters.cursor import CursorAdapter
 from core.codex_context import filter_manifest_for_access, write_codex_context_artifacts
 from core.codex_fixtures import create_sample_codex_sources
 from core.l5_io import write_l5_dict
 from core.recognition_runtime import recognition_first
+
+
+def _default_cursor_l5_path() -> Path:
+    return Path.home() / "agent-library" / "agents" / "cursor.l5.yaml"
 
 
 def _default_claude_code_l5_path() -> Path:
@@ -259,6 +264,18 @@ def _handle_codex_eval(args: argparse.Namespace) -> int:
     return 0
 
 
+def _handle_cursor_export(args: argparse.Namespace) -> int:
+    cursor_dir = Path(args.cursor_dir) if args.cursor_dir else None
+    adapter = CursorAdapter(cursor_dir=cursor_dir)
+    manifest = adapter.export_l5(since=_parse_since(args.since))
+    data = filter_manifest_for_access(manifest, access_level=args.access_level)
+    out_path = Path(args.out) if args.out else _default_cursor_l5_path()
+    write_l5_dict(data, out_path)
+    if args.print_manifest:
+        _print_yaml(data)
+    return 0
+
+
 def _handle_claude_code_export(args: argparse.Namespace) -> int:
     """
     Build a Claude Code L5 manifest and write it to ``~/agent-library/agents/
@@ -268,7 +285,7 @@ def _handle_claude_code_export(args: argparse.Namespace) -> int:
       Add to ~/.claude/settings.json:
         "hooks": {
           "SessionEnd": [
-            { "command": "continuo claude-code export" }
+            { "command": "bourdon claude-code export" }
           ]
         }
 
@@ -282,7 +299,7 @@ def _handle_claude_code_export(args: argparse.Namespace) -> int:
     except Exception as exc:  # noqa: BLE001 -- hook contract: never raises
         if args.verbose:
             print(
-                f"continuo claude-code export: adapter init failed: {exc}",
+                f"bourdon claude-code export: adapter init failed: {exc}",
                 file=sys.stderr,
             )
         return 0
@@ -292,14 +309,14 @@ def _handle_claude_code_export(args: argparse.Namespace) -> int:
     except AdapterDiscoveryError as exc:
         if args.verbose:
             print(
-                f"continuo claude-code export: no Claude Code memory sources found ({exc}), skipping",
+                f"bourdon claude-code export: no Claude Code memory sources found ({exc}), skipping",
                 file=sys.stderr,
             )
         return 0
     except Exception as exc:  # noqa: BLE001 -- hook contract
         if args.verbose:
             print(
-                f"continuo claude-code export: export failed: {exc}",
+                f"bourdon claude-code export: export failed: {exc}",
                 file=sys.stderr,
             )
         return 0
@@ -312,7 +329,7 @@ def _handle_claude_code_export(args: argparse.Namespace) -> int:
     except Exception as exc:  # noqa: BLE001 -- hook contract
         if args.verbose:
             print(
-                f"continuo claude-code export: write to {out_path} failed: {exc}",
+                f"bourdon claude-code export: write to {out_path} failed: {exc}",
                 file=sys.stderr,
             )
         return 0
@@ -321,7 +338,7 @@ def _handle_claude_code_export(args: argparse.Namespace) -> int:
         _print_yaml(data)
     elif args.verbose:
         print(
-            f"continuo claude-code export: wrote {out_path}",
+            f"bourdon claude-code export: wrote {out_path}",
             file=sys.stderr,
         )
     return 0
@@ -329,8 +346,8 @@ def _handle_claude_code_export(args: argparse.Namespace) -> int:
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="continuo",
-        description="Continuo CLI",
+        prog="bourdon",
+        description="Bourdon CLI",
     )
     subparsers = parser.add_subparsers(dest="command")
 
@@ -424,6 +441,33 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Log progress + errors to stderr (default: silent).",
     )
     cc_export_cmd.set_defaults(func=_handle_claude_code_export)
+
+    # ---- cursor subcommands --------------------------------------------------
+    cursor = subparsers.add_parser("cursor", help="Cursor-specific commands")
+    cursor_subparsers = cursor.add_subparsers(dest="cursor_command")
+
+    cursor_export_cmd = cursor_subparsers.add_parser(
+        "export",
+        help="Build a Cursor L5 manifest from native SQLite state",
+    )
+    cursor_export_cmd.add_argument(
+        "--cursor-dir",
+        help="Cursor data directory (default: platform standard path)",
+    )
+    cursor_export_cmd.add_argument("--out")
+    cursor_export_cmd.add_argument("--since")
+    cursor_export_cmd.add_argument(
+        "--access-level",
+        choices=("public", "team", "private"),
+        default="team",
+    )
+    cursor_export_cmd.add_argument(
+        "--print",
+        dest="print_manifest",
+        action="store_true",
+        help="Print the exported manifest after writing it.",
+    )
+    cursor_export_cmd.set_defaults(func=_handle_cursor_export)
 
     return parser
 

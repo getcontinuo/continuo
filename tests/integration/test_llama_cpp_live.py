@@ -7,8 +7,9 @@ semantics that the unit tests can only approximate with ``MockTransport``.
 
 Requirements
 ------------
+- Explicit opt-in: set ``BOURDON_RUN_LIVE_LLAMA=1``.
 - ``llama-server`` running on ``http://localhost:8080`` (override with
-  ``CONTINUO_LLAMA_URL`` env var) with ``--slots`` enabled.
+  ``BOURDON_LLAMA_URL`` env var) with ``--slots`` enabled.
 - Any model loaded; tests do not depend on output quality.
 - ``httpx`` installed (``pip install -e '.[llama-cpp]'``).
 
@@ -19,9 +20,9 @@ Skipped from CI by default via the ``integration`` pytest marker
 
     pytest -m integration tests/integration/
 
-The whole module additionally auto-skips at collection time if no
-``llama-server`` is reachable, so accidental ``pytest`` runs from
-contributors without a server don't see spurious failures.
+The whole module auto-skips unless explicitly enabled, and then also skips if
+no ``llama-server`` is reachable. This avoids false failures when another local
+service happens to listen on port 8080.
 """
 
 from __future__ import annotations
@@ -32,7 +33,6 @@ import socket
 import time
 from urllib.parse import urlparse
 
-import httpx
 import pytest
 
 from adapters.llama_cpp_backend import LlamaCppBackend
@@ -44,7 +44,16 @@ pytestmark = pytest.mark.integration
 # -- Configuration -----------------------------------------------------------
 
 
-LLAMA_URL = os.environ.get("CONTINUO_LLAMA_URL", "http://localhost:8080")
+LLAMA_URL = os.environ.get("BOURDON_LLAMA_URL", "http://localhost:8080")
+RUN_LIVE_LLAMA = os.environ.get("BOURDON_RUN_LIVE_LLAMA", "").strip().lower()
+
+
+if RUN_LIVE_LLAMA not in {"1", "true", "yes", "on"}:
+    pytest.skip(
+        "Live llama integration tests are not explicitly enabled; "
+        "set BOURDON_RUN_LIVE_LLAMA=1 to run them.",
+        allow_module_level=True,
+    )
 
 
 def _server_reachable(url: str, timeout: float = 0.5) -> bool:
@@ -62,7 +71,7 @@ def _server_reachable(url: str, timeout: float = 0.5) -> bool:
 if not _server_reachable(LLAMA_URL):
     pytest.skip(
         f"llama-server not reachable at {LLAMA_URL}; "
-        "set CONTINUO_LLAMA_URL or start the server. Skipping live tests.",
+        "set BOURDON_LLAMA_URL or start the server. Skipping live tests.",
         allow_module_level=True,
     )
 

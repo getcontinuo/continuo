@@ -1,8 +1,8 @@
-# Continuo — Positioning
+# Bourdon — Positioning
 
 **Status:** v0.1, 2026-04-27. Stake-in-the-ground document.
 
-This file makes Continuo's positioning explicit so contributors, evaluators,
+This file makes Bourdon's positioning explicit so contributors, evaluators,
 and future-us can hold each other to it. It is intentionally short and
 opinionated. If a future commit adds a feature whose justification doesn't
 trace back to one of the claims below, that commit needs a different
@@ -12,7 +12,7 @@ justification or the claim needs revising.
 
 ## The Claim
 
-**Continuo is the first memory layer for AI agents that treats *runtime
+**Bourdon is the first memory layer for AI agents that treats *runtime
 interaction timing* as a first-class problem.** Every other agent-memory
 framework treats memory as a *representation + retrieval* problem and
 optimizes for accuracy, recall, latency-of-the-call, or knowledge-graph
@@ -20,7 +20,7 @@ richness. Those are real problems and the field is good at them. But they
 are not the same problem as: *does the first sentence of the AI's response
 feel like recognition or like lookup?*
 
-That second problem is what Continuo exists to solve.
+That second problem is what Bourdon exists to solve.
 
 ---
 
@@ -53,14 +53,14 @@ isn't.
 
 This is documented as a live finding from a 2026-04-19 test session: see
 [`FINDINGS_JOURNAL.md` — Codex Recognition-First Gap](FINDINGS_JOURNAL.md).
-We invoked Codex with a fully-populated Continuo context and asked
+We invoked Codex with a fully-populated Bourdon context and asked
 "What do you know about OMNIvour?" The data layer worked perfectly.
 The agent still answered like a retrieval system: searched first,
 summarized notes second. **That gap is the product.**
 
 ---
 
-## How Continuo Differs from the Field
+## How Bourdon Differs from the Field
 
 | Framework | What it optimizes | What it does not address |
 |---|---|---|
@@ -70,7 +70,7 @@ summarized notes second. **That gap is the product.**
 | **Cognee** | Doc → KG construction | Runtime interaction shape |
 | **Memora** ([paper](https://hf.co/papers/2602.03315)) | Abstraction + cue anchors representation balance | Runtime interaction shape (framed as a representation problem, not a timing problem) |
 | **MCP SCS** ([paper](https://arxiv.org/abs/2601.11595)) | Cross-server context sharing for multi-agent workflows | Runtime interaction shape |
-| **Continuo** | **Runtime interaction shape: recognition → hydration → archive descent, timed to conversation rhythm** | Less mature on representation, less compliance posture, no commercial cloud — by choice |
+| **Bourdon** | **Runtime interaction shape: recognition → hydration → archive descent, timed to conversation rhythm** | Less mature on representation, less compliance posture, no commercial cloud — by choice |
 
 The pattern is clear: every box in the right column says "runtime
 interaction shape." That column is open. We're staking it.
@@ -94,7 +94,7 @@ serial pipeline. Recognition can't happen until retrieval finishes.
 Hydration can't happen in parallel because there's nothing to be parallel
 *to*. The result is the lookup-feel that breaks the illusion of a mind.
 
-Continuo's L0–L6 stack is the engineering translation of this cognition
+Bourdon's L0–L6 stack is the engineering translation of this cognition
 sequence:
 
 - **L0** (always-loaded keywords) → recognition substrate
@@ -127,8 +127,8 @@ The cost of choosing timing as the wedge:
 
 - **Less compliance posture.** SOC 2 / HIPAA are not on the v1
   roadmap. If you're building for healthcare or finance today,
-  Mem0 is the right choice; Continuo isn't.
-- **Less benchmark presence.** Continuo doesn't beat anyone on
+  Mem0 is the right choice; Bourdon isn't.
+- **Less benchmark presence.** Bourdon doesn't beat anyone on
   LongMemEval. We don't try to. The benchmark we care about doesn't
   exist yet (response-shape eval).
 - **Smaller initial population of users.** "Memory that feels like
@@ -144,7 +144,7 @@ We're paying these costs deliberately.
 
 The thesis is falsifiable:
 
-- **If a Continuo-equipped agent still fails the 2026-04-19 test** —
+- **If a Bourdon-equipped agent still fails the 2026-04-19 test** —
   user asks "What is X?", agent searches before answering — after we
   ship the recognition-first runtime path (the open work), then the
   architecture is wrong, not just the implementation. Either the
@@ -157,14 +157,14 @@ The thesis is falsifiable:
 - **If a competing project ships recognition-first behavior using a
   different architecture** (e.g., not L0/L1, not timing-orchestrated,
   but achieving the same felt result), we adopt their approach and
-  document the loss. Continuo's wedge is the *behavior*, not the
+  document the loss. Bourdon's wedge is the *behavior*, not the
   specific architecture.
 
 - **If the felt difference doesn't matter to users** — if rigorous
   blind testing shows people genuinely cannot distinguish a
   recognition-first agent from a retrieve-then-respond agent at
   comparable retrieval quality — then the entire wedge collapses
-  and Continuo should be folded back into one of the existing
+  and Bourdon should be folded back into one of the existing
   frameworks as a runtime helper rather than a standalone product.
 
 We are not in any of those states yet. The recognition-first runtime
@@ -186,7 +186,7 @@ Work needed to make the thesis testable in daily use:
    "Coolculator" should resolve immediately to canonical project
    identities with no lookup pause.
 
-3. **Recognition-first eval harness** — `continuo codex eval
+3. **Recognition-first eval harness** — `bourdon codex eval
    --recognition` should score response *shape* and *latency*, not
    just entity correctness. Without this, we can't measure progress
    against the thesis.
@@ -194,11 +194,11 @@ Work needed to make the thesis testable in daily use:
 4. **Auto-fire on session close** — the Claude Code adapter exists
    and reads memory correctly; the missing piece is wiring it to
    emit L5 to `~/agent-library/` automatically at session end so
-   the federation populates without manual `continuo codex export`
+   the federation populates without manual `bourdon codex export`
    calls.
 
 These four items, together, complete the loop that makes the thesis
-runnable in normal daily work. Until they ship, Continuo has the right
+runnable in normal daily work. Until they ship, Bourdon has the right
 shape but not yet the proof.
 
 ---

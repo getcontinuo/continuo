@@ -1,6 +1,6 @@
-# Contributing to Continuo
+# Contributing to Bourdon
 
-Continuo is free (MIT) and in pre-alpha. Contributions welcome — especially adapters for agents and frameworks not yet covered.
+Bourdon is source-available under the Business Source License 1.1 (BSL) and in pre-alpha. Free for solo developers, internal/non-competing commercial use, research, and education; auto-converts to Apache 2.0 four years after each version is published. See [`LICENSE_FAQ.md`](LICENSE_FAQ.md) for plain-English guidance. Contributions welcome — especially adapters for agents and frameworks not yet covered.
 
 ## Current Status
 
@@ -18,7 +18,7 @@ v0.0.1 scaffold. Phase 1 reference orchestrator (L0 + L1) is working standalone.
 ## Types of Contributions
 
 ### Adapters (most wanted)
-Continuo's value scales linearly with the number of agents/tools it can federate. An adapter reads a native agent's memory store and emits a normalized L5 manifest. See [`adapters/`](adapters/) for examples (once implemented) and the adapter contract spec in `spec/ADAPTER_CONTRACT.md` (coming in v0.1.0).
+Bourdon's value scales linearly with the number of agents/tools it can federate. An adapter reads a native agent's memory store and emits a normalized L5 manifest. See [`adapters/`](adapters/) for examples (once implemented) and the adapter contract spec in `spec/ADAPTER_CONTRACT.md` (coming in v0.1.0).
 
 Specifically wanted:
 - Cursor adapter (SQLite schema reverse-engineering) — v0 in progress at [`ryandavispro1-cmyk/cursor-spot`](https://github.com/ryandavispro1-cmyk/cursor-spot); will upstream once stable.
@@ -43,8 +43,8 @@ Specifically wanted:
 ## Development Setup
 
 ```bash
-git clone https://github.com/getcontinuo/continuo
-cd continuo
+git clone https://github.com/getbourdon/bourdon
+cd bourdon
 
 # Python 3.10+ required
 python -m venv .venv
@@ -59,7 +59,7 @@ pip install -e .[dev]
 For contributors working on L5/L6 federation and retrieval ergonomics, use the memory-cycle scripts:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/bootstrap-continuo-mcp.ps1 -WorkspaceRoot "."
+powershell -ExecutionPolicy Bypass -File scripts/bootstrap-bourdon-mcp.ps1 -WorkspaceRoot "."
 powershell -ExecutionPolicy Bypass -File scripts/run_memory_cycle.ps1 -WorkspaceRoot "." -SchemaPath ".\spec\L5_schema.json"
 ```
 
@@ -93,4 +93,4 @@ Be excellent to each other. If something needs formalizing later we will, but fo
 
 ## License
 
-All contributions are MIT-licensed under the project's terms. By submitting a PR you agree to license your contribution accordingly.
+All contributions are licensed under the Business Source License 1.1, with copyright assigned to RADLAB LLC. By submitting a PR you agree to license your contribution accordingly. This allows RADLAB LLC to maintain unified copyright over the codebase, which is required for offering commercial licenses to organizations whose use exceeds the BSL Additional Use Grant.

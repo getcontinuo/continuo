@@ -35,7 +35,7 @@ from adapters.base import (
     AdapterDiscoveryError,
     AgentInfo,
     AgentStore,
-    ContinuoAdapter,
+    BourdonAdapter,
     Entity,
     HealthStatus,
     L5Manifest,
@@ -429,8 +429,8 @@ def _parse_auto_memory(memory_path: Path) -> list[Entity]:
 # -- Parser: knowledge graph JSONL ---------------------------------------------
 
 
-def _graph_entity_to_continuo_entity(record: dict) -> Optional[Entity]:
-    """Convert one MCP graph entity record to a Continuo Entity."""
+def _graph_entity_to_bourdon_entity(record: dict) -> Optional[Entity]:
+    """Convert one MCP graph entity record to a Bourdon Entity."""
     name = record.get("name")
     if not name or not isinstance(name, str):
         return None
@@ -491,7 +491,7 @@ def _parse_knowledge_graph(graph_path: Path) -> list[Entity]:
                     continue
                 if record.get("type") != "entity":
                     continue
-                entity = _graph_entity_to_continuo_entity(record)
+                entity = _graph_entity_to_bourdon_entity(record)
                 if entity:
                     entities.append(entity)
     except OSError:
@@ -699,4 +699,4 @@ class ClaudeCodeAdapter:
 
 
 # Protocol conformance check at import time -- catches missing methods before CI
-_: ContinuoAdapter = ClaudeCodeAdapter()
+_: BourdonAdapter = ClaudeCodeAdapter()

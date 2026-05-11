@@ -78,7 +78,7 @@ def test_create_l6_server_returns_fastmcp_instance(library):
     server = server_module.create_l6_server(store)
     assert server is not None
     # FastMCP instances have a `name` attribute
-    assert getattr(server, "name", None) == "continuo-l6"
+    assert getattr(server, "name", None) == "bourdon-l6"
 
 
 def test_server_name_override(library):

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Continuo launch helper -- interactive Twitter + HN Show launcher.
+"""Bourdon launch helper -- interactive Twitter + HN Show launcher.
 
 This is NOT a fully automated poster. Why:
 
@@ -11,7 +11,7 @@ This is NOT a fully automated poster. Why:
 
 What it does instead:
 
-  1. Pre-flight: curl continuo.cloud, verify all 7 tweets fit in 280 chars
+  1. Pre-flight: curl bourdon.ai, verify all 7 tweets fit in 280 chars
   2. Walk through each tweet -- copies to clipboard, opens Twitter compose
   3. 30-minute countdown between Twitter and HN
   4. HN: copies title to clipboard, opens submit page; then copies body
@@ -48,7 +48,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 TWITTER_DRAFT = REPO_ROOT / "spec" / "launch_drafts" / "twitter_thread.md"
 HN_DRAFT = REPO_ROOT / "spec" / "launch_drafts" / "hn_show.md"
 
-LANDING_URL = "https://continuo.cloud"
+LANDING_URL = "https://bourdon.ai"
 TWITTER_COMPOSE_URL = "https://twitter.com/intent/tweet"
 HN_SUBMIT_URL = "https://news.ycombinator.com/submit"
 
@@ -262,8 +262,8 @@ def post_engagement_reminder() -> None:
     print("  - Reply to emoji-only Twitter mentions")
     print()
     print("Tracking:")
-    print("  - GitHub stars / clones: github.com/getcontinuo/continuo/graphs/traffic")
-    print("  - Cloudflare analytics: dash.cloudflare.com -> continuo-cloud-landing")
+    print("  - GitHub stars / clones: github.com/getbourdon/bourdon/graphs/traffic")
+    print("  - Cloudflare analytics: dash.cloudflare.com -> bourdon-cloud-landing")
 
 
 def main() -> int:

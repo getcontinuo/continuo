@@ -1,8 +1,9 @@
-"""Tests for the top-level `continuo` CLI."""
+"""Tests for the top-level `bourdon` CLI."""
 
 from __future__ import annotations
 
 import json
+import sqlite3
 from pathlib import Path
 
 import yaml
@@ -140,6 +141,52 @@ def test_cli_codex_export_writes_manifest(tmp_path, monkeypatch):
     manifest = yaml.safe_load(out_path.read_text(encoding="utf-8"))
     assert manifest["agent"]["id"] == "codex"
     assert manifest["recent_sessions"][0]["visibility"] == "team"
+
+
+def _seed_cursor_state_db(path: Path, records: list[tuple[str, dict]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(path))
+    try:
+        conn.execute("CREATE TABLE ItemTable (key TEXT PRIMARY KEY, value TEXT)")
+        for key, value in records:
+            conn.execute(
+                "INSERT INTO ItemTable (key, value) VALUES (?, ?)",
+                (key, json.dumps(value)),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def test_cli_cursor_export_writes_manifest(tmp_path):
+    cursor_dir = tmp_path / "Cursor"
+    (cursor_dir / "User" / "workspaceStorage" / "ws1").mkdir(parents=True)
+    db = cursor_dir / "User" / "workspaceStorage" / "ws1" / "state.vscdb"
+    _seed_cursor_state_db(
+        db,
+        [
+            (
+                "composer.cliTest",
+                {
+                    "workspacePath": "/Users/dev/projects/cli-app",
+                    "title": "Refactor export command",
+                    "messages": [],
+                    "lastUpdatedAt": "2026-05-01T12:00:00Z",
+                },
+            ),
+        ],
+    )
+
+    out_path = tmp_path / "cursor.l5.yaml"
+    exit_code = main(
+        ["cursor", "export", "--cursor-dir", str(cursor_dir), "--out", str(out_path)]
+    )
+
+    assert exit_code == 0
+    manifest = yaml.safe_load(out_path.read_text(encoding="utf-8"))
+    assert manifest["agent"]["id"] == "cursor"
+    assert manifest["recent_sessions"]
+    assert "cli-app" in (manifest["recent_sessions"][0].get("cwd") or "")
 
 
 def test_cli_codex_build_context_writes_l0_and_l1(tmp_path, monkeypatch):

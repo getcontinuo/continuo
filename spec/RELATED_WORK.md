@@ -1,9 +1,9 @@
-# Continuo — Related Work
+# Bourdon — Related Work
 
 **Status:** v0.1, 2026-04-27. Reference document.
 
-This file maps Continuo's vocabulary to the wider agent-memory field so
-contributors and evaluators can locate Continuo on the map. We try to
+This file maps Bourdon's vocabulary to the wider agent-memory field so
+contributors and evaluators can locate Bourdon on the map. We try to
 adopt established terminology where it fits, and explicitly diverge
 where our timing-first frame demands it. See [POSITIONING.md](POSITIONING.md)
 for what we're staking; this document is purely descriptive.
@@ -12,9 +12,9 @@ for what we're staking; this document is purely descriptive.
 
 ## Vocabulary Cross-Reference
 
-How Continuo's terms map to academic + industry vocabulary:
+How Bourdon's terms map to academic + industry vocabulary:
 
-| Continuo term | Closest academic / industry analogue | Source |
+| Bourdon term | Closest academic / industry analogue | Source |
 |---|---|---|
 | **L0 Hot Cache** | "Primary abstractions" (Memora); "always-loaded context" (LinkedIn CMA); "system-prompt context" (general) | [Memora](https://hf.co/papers/2602.03315) |
 | **L1 Entity Synopses** | "Cue anchors" (Memora); "memory blocks" (Letta); "factual memory" (Memory in the Age of AI Agents survey) | [Memora](https://hf.co/papers/2602.03315), [Letta](https://www.letta.com/) |
@@ -25,7 +25,7 @@ How Continuo's terms map to academic + industry vocabulary:
 | **L6 Federation Library** | "Shared Context Store (SCS)" (formal MCP proposal); "memory mesh" (informal) | [SCS proposal — arXiv 2601.11595](https://arxiv.org/abs/2601.11595) |
 | **role_narrative** | "Role-aligned memory block" (Intrinsic Memory Agents) | [Intrinsic Memory Agents](https://hf.co/papers/2508.08997) |
 | **valid_from / valid_to** | "Temporal validity window" (Zep Graphiti); "fact validity" (TKG literature) | [Zep / Graphiti](https://www.getzep.com/) |
-| **Recognition-first runtime** *(open work)* | None established — this is the white-space we're staking | (Continuo's own framing) |
+| **Recognition-first runtime** *(open work)* | None established — this is the white-space we're staking | (Bourdon's own framing) |
 
 ---
 
@@ -36,14 +36,14 @@ How Continuo's terms map to academic + industry vocabulary:
 store, mature compliance posture (SOC 2 Type II, HIPAA), large community.
 
 **What we adopt:** Nothing yet. The 3-tier scope is well-designed but
-orthogonal to Continuo's L0-L6 split — they answer different questions
+orthogonal to Bourdon's L0-L6 split — they answer different questions
 (scope is "who is this for?"; layer is "what timing budget does this
 fit in?"). We could add Mem0-style scope tags as an optional Entity
 field in a future spec revision.
 
-**Where we diverge:** Mem0 is a managed cloud / SDK product; Continuo is
-a local-first OSS spec. Mem0 is paid; Continuo is free. Mem0 ranks well
-on retrieval benchmarks; Continuo doesn't try to.
+**Where we diverge:** Mem0 is a managed cloud / SDK product; Bourdon is
+a local-first OSS spec. Mem0 is paid; Bourdon is free. Mem0 ranks well
+on retrieval benchmarks; Bourdon doesn't try to.
 
 ### Zep (Graphiti)
 **Wedge:** Temporal knowledge graph. Every fact has a validity window
@@ -99,7 +99,7 @@ their always-on episodic surface. Their three-layer cognitive split
 numbering and we cross-reference it in the table above.
 
 **Where we diverge:** CMA is enterprise-scale managed infrastructure;
-Continuo is a spec + reference impl. Different audience, similar
+Bourdon is a spec + reference impl. Different audience, similar
 architectural intuitions.
 
 ---
@@ -114,7 +114,7 @@ taxonomy of agent memory (token-level, parametric, latent, factual,
 experiential, working) that's richer than our L0-L4 numbering.
 
 **How it maps to us:** Their taxonomy is **complementary** to our
-timing-budget numbering. Continuo's L0 holds *factual* memory, L1
+timing-budget numbering. Bourdon's L0 holds *factual* memory, L1
 holds *experiential* memory ("what we did with X"), L2-L4 hold a mix
 of *factual* and *latent* memory. We don't address parametric memory
 (model weights) at all. The cross-reference is in the vocabulary table
@@ -201,7 +201,7 @@ maturation, and enterprise readiness.** Specific sponsored work:
   authentication
 - **SEP-1933 (Workload Identity Federation)** — cross-org agent identity
 
-**Our alignment:** Continuo's L6 server is built on `fastmcp` and
+**Our alignment:** Bourdon's L6 server is built on `fastmcp` and
 exposes resources / tools per MCP convention. We do not yet implement
 DPoP or Workload Identity Federation; those are enterprise concerns
 out of scope for our pre-alpha phase. Our spec choices try not to
@@ -211,9 +211,9 @@ identity scopes).
 
 ---
 
-## Where Continuo Diverges Intentionally
+## Where Bourdon Diverges Intentionally
 
-The recurring theme: Continuo's wedge is **runtime interaction timing**,
+The recurring theme: Bourdon's wedge is **runtime interaction timing**,
 not memory representation or retrieval quality. So we deliberately do
 *not* compete with the field on:
 
@@ -221,14 +221,14 @@ not memory representation or retrieval quality. So we deliberately do
   don't optimize for these. If we ranked, that would be a side effect
   of integration with backends like UltraRAG (L2), not a primary goal.
 - **Knowledge graph richness.** We use simple entity rows. KG
-  integrations are something Continuo could consume from (via adapters
+  integrations are something Bourdon could consume from (via adapters
   emitting graph-shaped Entities) but we don't build a graph engine.
 - **Compliance certifications.** Our local-first, free-OSS posture
-  defers SOC 2 / HIPAA to whoever wants to take Continuo to enterprise.
-- **Managed cloud.** No hosted Continuo. Anyone can self-host the L6
+  defers SOC 2 / HIPAA to whoever wants to take Bourdon to enterprise.
+- **Managed cloud.** No hosted Bourdon. Anyone can self-host the L6
   server; that's the deployment model.
 
-The corresponding *positive* commitment is that Continuo focuses on the
+The corresponding *positive* commitment is that Bourdon focuses on the
 runtime-shape problem ([POSITIONING.md](POSITIONING.md)) and treats every
 adoption from this list as a measurable improvement on top of an existing
 field standard, not a replacement for it.
@@ -239,5 +239,5 @@ field standard, not a replacement for it.
 
 This document is the result of a 2026-04-22 / 2026-04-27 landscape sweep
 documented in the second entry of [FINDINGS_JOURNAL.md](FINDINGS_JOURNAL.md).
-It will be updated as the field evolves and as Continuo's own
+It will be updated as the field evolves and as Bourdon's own
 implementation reveals new alignments / divergences.

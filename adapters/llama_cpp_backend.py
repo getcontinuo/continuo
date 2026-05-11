@@ -1,19 +1,19 @@
 """
-Continuo llama.cpp inference backend -- adapter for ``llama-server``.
+Bourdon llama.cpp inference backend -- adapter for ``llama-server``.
 
 Implements the ``InferenceBackend`` Protocol from
 ``core/inference_protocol.py`` against llama.cpp's ``llama-server`` HTTP
 API: SSE-streaming completion, slot enumeration, and cancel-via-disconnect.
 
 This is the only currently-shipping local inference server that supports
-the full capability set Continuo's recognition-first runtime needs --
+the full capability set Bourdon's recognition-first runtime needs --
 streaming, mid-stream cancel, concurrent slots (``-np N``), and
 KV-cache reuse (``cache_prompt: true``). Other backends (Ollama,
 ``transformers``) can implement this Protocol when they catch up.
 
 Optional install:
 
-    pip install 'continuo-memory[llama-cpp]'
+    pip install 'bourdon[llama-cpp]'
 
 Usage:
 
@@ -108,7 +108,7 @@ class LlamaCppBackend:
         if httpx is None:
             raise ImportError(
                 "httpx is required for LlamaCppBackend. "
-                "Install with: pip install 'continuo-memory[llama-cpp]'"
+                "Install with: pip install 'bourdon[llama-cpp]'"
             )
         self._base_url = base_url.rstrip("/")
         self._api_key = api_key
