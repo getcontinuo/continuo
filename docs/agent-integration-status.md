@@ -13,13 +13,19 @@ Status: export hook available.
 
 ## Codex
 
-Status: fallback and turn preparation available; native distilled memory currently blocked upstream.
+Status: MCP consumer and fallback publisher available; native distilled memory
+currently diagnostic only.
 
 - `bourdon codex doctor` diagnoses `~/.codex/state_5.sqlite` and fallback recall.
 - `bourdon codex prepare-turn` refreshes Codex fallback memory surfaces and emits
   prompt-ready recognition context.
-- Native Codex Stage 1 distilled memory is not relied on when it reports no
-  stage1 outputs and errored memory jobs.
+- `bourdon codex install-mcp --write` registers Bourdon with Codex through
+  `codex mcp add`; `bourdon codex verify-mcp` confirms the recognition-first
+  MCP surface is available.
+- **Setup walkthrough:** [`docs/integrations/codex.md`](integrations/codex.md).
+- Native Codex Stage 1 distilled memory is observed diagnostically. Bourdon
+  keeps the fallback publisher available when Stage 1 is absent, partial, or
+  erroring.
 
 ## Cursor
 

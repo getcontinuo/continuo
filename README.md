@@ -93,10 +93,19 @@ This loads the L0 hot cache and any matching L1 synopses, then prints the fully-
 bourdon codex export --access-level team
 bourdon codex build-context --out-dir ./build/codex-context
 bourdon codex prepare-turn --memory-md "Can we keep working on Bourdon?"
+bourdon codex mcp-status
+bourdon codex install-mcp       # dry-run; add --write to register with Codex
+bourdon codex verify-mcp
 bourdon codex eval --fixtures
 ```
 
-This generic Codex path is designed for org-wide distribution: local Codex memories stay `team` by default, public federation requires explicit promotion, and generated L0/L1 artifacts live separately from the repo's static Clyde examples.
+This generic Codex path is designed for org-wide distribution: local Codex
+memories stay `team` by default, public federation requires explicit promotion,
+and generated L0/L1 artifacts live separately from the repo's static Clyde
+examples.
+
+For live Codex MCP wiring, see
+[`docs/integrations/codex.md`](docs/integrations/codex.md).
 
 ## Quick Start (Cross-Agent Recognition)
 
@@ -116,8 +125,9 @@ same `--transport` / `--port` flags.
 
 The acceptance demo — one agent writes, a different agent reads via Bourdon
 MCP — is documented step-by-step in [`docs/PROOF.md`](docs/PROOF.md). Per-host
-MCP wiring lives in [`docs/integrations/`](docs/integrations/) (Claude Desktop,
-OpenManus, more on the way). The `bourdon dogfood` command runs the same
+MCP wiring lives in [`docs/integrations/`](docs/integrations/) (Codex, Claude
+Desktop, Cursor, OpenManus, more on the way). The `bourdon dogfood` command
+runs the same
 round-trip against your local stores and prints a per-adapter matrix — useful
 for verifying the federation is healthy before standing up the demo.
 
@@ -195,7 +205,7 @@ powershell -ExecutionPolicy Bypass -File scripts/doctor.ps1 -WorkspaceRoot "." -
 | Clyde          | Native            | Planned   |
 | Clair          | Native            | Planned   |
 | Claude Code    | Native + Adapter  | Export hook available |
-| Codex          | Moderate          | Fallback + prepare-turn available |
+| Codex          | Moderate          | MCP consumer + fallback publisher available |
 | Cursor         | SQLite            | Adapter available; `bourdon cursor export` |
 | Cline          | Unknown           | Blocked pending native store path/schema |
 | Copilot        | Convention file   | Adapter available; `bourdon copilot export` |

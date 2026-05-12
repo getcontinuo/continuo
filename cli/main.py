@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import json
+import os
+import subprocess
 import sys
 import tempfile
 import time as _time
@@ -15,6 +18,14 @@ from typing import Any
 import yaml
 
 from adapters.base import AdapterDiscoveryError
+from adapters.cascade import (
+    CascadeAdapter,
+    _inspect_cascade_memory,
+    default_cascade_memory_path,
+)
+from adapters.cascade import (
+    init_memory_file as cascade_init_memory_file,
+)
 from adapters.claude_code import ClaudeCodeAdapter
 from adapters.codex import (
     CodexAdapter,
@@ -25,12 +36,6 @@ from adapters.codex import (
     _inspect_codex_state_db,
     _merge_bourdon_memory_md_section,
     _safe_native_memory_text,
-)
-from adapters.cascade import (
-    CascadeAdapter,
-    _inspect_cascade_memory,
-    default_cascade_memory_path,
-    init_memory_file as cascade_init_memory_file,
 )
 from adapters.copilot import (
     CopilotAdapter,
@@ -46,6 +51,18 @@ from core.l5_io import write_l5_dict
 from core.l6_server import prepare_recognition_context_from_store
 from core.l6_store import DEFAULT_LIBRARY_PATH, L6Store
 from core.recognition_runtime import recognition_first
+
+BOURDON_MCP_SERVER_NAME = "bourdon"
+BOURDON_MCP_ACCESS_LEVEL_ENV = "BOURDON_DEFAULT_ACCESS_LEVEL"
+EXPECTED_BOURDON_MCP_TOOLS = {
+    "commit_to_federation",
+    "find_entity",
+    "get_cross_agent_summary",
+    "get_deeper_context",
+    "list_recent_work",
+    "prepare_recognition_context",
+    "query_agent_memory",
+}
 
 
 def _default_claude_code_l5_path() -> Path:
@@ -93,6 +110,150 @@ def _write_yaml_if_requested(data: dict[str, Any], path: str | None) -> None:
 
 def _print_yaml(data: dict[str, Any]) -> None:
     print(yaml.safe_dump(data, sort_keys=False), end="")
+
+
+def _default_bourdon_command() -> str:
+    candidate = Path(sys.executable).with_name("bourdon")
+    if candidate.exists():
+        return str(candidate)
+    return "bourdon"
+
+
+def _bourdon_serve_args(library: Path | None = None) -> list[str]:
+    args = ["serve", "--quiet"]
+    if library is not None:
+        args.extend(["--library", str(library)])
+    return args
+
+
+def _codex_mcp_add_command(
+    bourdon_command: str,
+    access_level: str,
+    library: Path | None = None,
+) -> list[str]:
+    return [
+        "codex",
+        "mcp",
+        "add",
+        BOURDON_MCP_SERVER_NAME,
+        "--env",
+        f"{BOURDON_MCP_ACCESS_LEVEL_ENV}={access_level}",
+        "--",
+        bourdon_command,
+        *_bourdon_serve_args(library),
+    ]
+
+
+def _safe_mcp_output(text: str) -> str:
+    safe_lines: list[str] = []
+    sensitive_words = ("token", "secret", "password", "api_key", "apikey")
+    for line in text.strip().splitlines():
+        lowered = line.lower()
+        if (
+            BOURDON_MCP_ACCESS_LEVEL_ENV not in line
+            and any(word in lowered for word in sensitive_words)
+        ):
+            safe_lines.append("[redacted sensitive MCP line]")
+        else:
+            safe_lines.append(line)
+    return "\n".join(safe_lines)
+
+
+def _run_codex_mcp_get(name: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["codex", "mcp", "get", name],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+def _run_codex_mcp_add(command: list[str]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(command, capture_output=True, text=True, check=False)
+
+
+def _codex_mcp_status(name: str = BOURDON_MCP_SERVER_NAME) -> dict[str, Any]:
+    command = ["codex", "mcp", "get", name]
+    try:
+        result = _run_codex_mcp_get(name)
+    except FileNotFoundError:
+        return {
+            "name": name,
+            "installed": False,
+            "status": "error",
+            "command": command,
+            "message": "codex CLI not found on PATH.",
+        }
+
+    output = "\n".join(part for part in (result.stdout, result.stderr) if part)
+    safe_output = _safe_mcp_output(output)
+    if result.returncode == 0:
+        return {
+            "name": name,
+            "installed": True,
+            "status": "installed",
+            "command": command,
+            "output": safe_output,
+        }
+
+    missing = f"No MCP server named '{name}' found" in output
+    return {
+        "name": name,
+        "installed": False,
+        "status": "missing" if missing else "error",
+        "command": command,
+        "message": safe_output,
+        "returncode": result.returncode,
+    }
+
+
+def _first_mcp_json_payload(call_result: Any) -> dict[str, Any]:
+    for item in call_result.content:
+        text = getattr(item, "text", None)
+        if not text:
+            continue
+        try:
+            payload = json.loads(text)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(payload, dict):
+            return payload
+    return {}
+
+
+async def _verify_bourdon_mcp_server(
+    command: str,
+    args: list[str],
+    env: dict[str, str],
+    prompt: str,
+    access_level: str,
+) -> dict[str, Any]:
+    from mcp import ClientSession
+    from mcp.client.stdio import StdioServerParameters, stdio_client
+
+    server = StdioServerParameters(command=command, args=args, env=env)
+    async with (
+        stdio_client(server) as (read_stream, write_stream),
+        ClientSession(read_stream, write_stream) as session,
+    ):
+        await session.initialize()
+        tools = await session.list_tools()
+        tool_names = sorted(tool.name for tool in tools.tools)
+        missing_tools = sorted(EXPECTED_BOURDON_MCP_TOOLS.difference(tool_names))
+        recognition_payload: dict[str, Any] = {}
+        if "prepare_recognition_context" in tool_names:
+            recognition_result = await session.call_tool(
+                "prepare_recognition_context",
+                {"prompt": prompt, "access_level": access_level},
+            )
+            recognition_payload = _first_mcp_json_payload(recognition_result)
+
+    return {
+        "status": "ok" if not missing_tools else "error",
+        "tools": tool_names,
+        "missing_tools": missing_tools,
+        "recognition": recognition_payload,
+    }
 
 
 def _write_text_atomic(text: str, target: Path) -> None:
@@ -349,9 +510,10 @@ def _handle_serve(args: argparse.Namespace) -> int:
     if getattr(args, "quiet", False) is False:
         # Banner goes to stderr so stdio transport (which uses stdout for the
         # MCP protocol) stays clean.
-        print(f"Bourdon L6 server", file=sys.stderr)
+        print("Bourdon L6 server", file=sys.stderr)
         print(f"  library:   {library_path}", file=sys.stderr)
-        print(f"  agents:    {len(agents)} loaded ({', '.join(agents) if agents else 'none'})", file=sys.stderr)
+        agent_names = ", ".join(agents) if agents else "none"
+        print(f"  agents:    {len(agents)} loaded ({agent_names})", file=sys.stderr)
         print(f"  transport: {transport}", file=sys.stderr)
         if transport == "http":
             print(f"  port:      {port}", file=sys.stderr)
@@ -372,7 +534,8 @@ def _handle_serve(args: argparse.Namespace) -> int:
                 server.run(transport="http", port=port)
             except TypeError:
                 print(
-                    "WARN: this fastmcp version does not accept transport='http'; falling back to stdio.",
+                    "WARN: this fastmcp version does not accept transport='http'; "
+                    "falling back to stdio.",
                     file=sys.stderr,
                 )
                 server.run()
@@ -439,6 +602,119 @@ def _handle_codex_doctor(args: argparse.Namespace) -> int:
     _write_yaml_if_requested(report, args.report_out)
     _print_yaml(report)
     return 0
+
+
+def _handle_codex_mcp_status(args: argparse.Namespace) -> int:
+    report = _codex_mcp_status()
+    _write_yaml_if_requested(report, getattr(args, "report_out", None))
+    _print_yaml(report)
+    return 0 if report["status"] in {"installed", "missing"} else 1
+
+
+def _handle_codex_install_mcp(args: argparse.Namespace) -> int:
+    library = Path(args.library) if getattr(args, "library", None) else None
+    bourdon_command = args.bourdon_command or _default_bourdon_command()
+    install_command = _codex_mcp_add_command(
+        bourdon_command,
+        args.access_level,
+        library=library,
+    )
+    current_status = _codex_mcp_status()
+
+    if current_status["installed"]:
+        report = {
+            "name": BOURDON_MCP_SERVER_NAME,
+            "mode": "write" if args.write else "dry-run",
+            "installed": True,
+            "would_write": False,
+            "reason": "already_installed",
+            "codex_mcp": current_status,
+            "remove_command": ["codex", "mcp", "remove", BOURDON_MCP_SERVER_NAME],
+        }
+        _write_yaml_if_requested(report, getattr(args, "report_out", None))
+        _print_yaml(report)
+        return 0
+
+    report: dict[str, Any] = {
+        "name": BOURDON_MCP_SERVER_NAME,
+        "mode": "write" if args.write else "dry-run",
+        "installed": False,
+        "would_write": True,
+        "command": install_command,
+        "codex_mcp": current_status,
+    }
+
+    if current_status["status"] == "error":
+        report["status"] = "error"
+        _write_yaml_if_requested(report, getattr(args, "report_out", None))
+        _print_yaml(report)
+        return 1
+
+    if not args.write:
+        report["status"] = "ready"
+        _write_yaml_if_requested(report, getattr(args, "report_out", None))
+        _print_yaml(report)
+        return 0
+
+    try:
+        result = _run_codex_mcp_add(install_command)
+    except FileNotFoundError:
+        report.update({
+            "status": "error",
+            "installed": False,
+            "message": "codex CLI not found on PATH.",
+        })
+        _write_yaml_if_requested(report, getattr(args, "report_out", None))
+        _print_yaml(report)
+        return 1
+
+    report.update({
+        "status": "installed" if result.returncode == 0 else "error",
+        "installed": result.returncode == 0,
+        "returncode": result.returncode,
+        "stdout": _safe_mcp_output(result.stdout),
+        "stderr": _safe_mcp_output(result.stderr),
+    })
+    _write_yaml_if_requested(report, getattr(args, "report_out", None))
+    _print_yaml(report)
+    return 0 if result.returncode == 0 else 1
+
+
+def _handle_codex_verify_mcp(args: argparse.Namespace) -> int:
+    current_status = _codex_mcp_status()
+    if not current_status["installed"]:
+        report = {
+            "status": current_status["status"],
+            "codex_mcp": current_status,
+            "message": "Bourdon is not registered in Codex MCP.",
+        }
+        _write_yaml_if_requested(report, getattr(args, "report_out", None))
+        _print_yaml(report)
+        return 1
+
+    library = Path(args.library) if getattr(args, "library", None) else None
+    bourdon_command = args.bourdon_command or _default_bourdon_command()
+    server_args = _bourdon_serve_args(library)
+    env = dict(os.environ)
+    env[BOURDON_MCP_ACCESS_LEVEL_ENV] = args.access_level
+    verification = asyncio.run(
+        _verify_bourdon_mcp_server(
+            bourdon_command,
+            server_args,
+            env,
+            args.prompt,
+            args.access_level,
+        )
+    )
+    report = {
+        **verification,
+        "codex_mcp": current_status,
+        "command": [bourdon_command, *server_args],
+        "access_level": args.access_level,
+    }
+    _write_yaml_if_requested(report, getattr(args, "report_out", None))
+    _print_yaml(report)
+    return 0 if report["status"] == "ok" else 1
 
 
 def _handle_codex_sync_native(args: argparse.Namespace) -> int:
@@ -1146,6 +1422,68 @@ def _build_parser() -> argparse.ArgumentParser:
     doctor_cmd.add_argument("--codex-home", help=argparse.SUPPRESS)
     doctor_cmd.add_argument("--codex-brain", help=argparse.SUPPRESS)
     doctor_cmd.set_defaults(func=_handle_codex_doctor)
+
+    mcp_status_cmd = codex_subparsers.add_parser(
+        "mcp-status",
+        help="Report whether Bourdon is registered as a Codex MCP server",
+    )
+    mcp_status_cmd.add_argument("--report-out")
+    mcp_status_cmd.set_defaults(func=_handle_codex_mcp_status)
+
+    install_mcp_cmd = codex_subparsers.add_parser(
+        "install-mcp",
+        help="Print or register the Bourdon MCP server with Codex",
+    )
+    install_mcp_cmd.add_argument(
+        "--write",
+        action="store_true",
+        help="Run codex mcp add. Without this flag, only print the command.",
+    )
+    install_mcp_cmd.add_argument(
+        "--access-level",
+        choices=("public", "team", "private"),
+        default="team",
+        help="Default Bourdon access level for Codex MCP calls (default team)",
+    )
+    install_mcp_cmd.add_argument(
+        "--library",
+        type=Path,
+        default=None,
+        help=f"Optional agent-library path for the MCP server (default: {DEFAULT_LIBRARY_PATH})",
+    )
+    install_mcp_cmd.add_argument(
+        "--bourdon-command",
+        help="Bourdon executable path (default: sibling of the current Python executable)",
+    )
+    install_mcp_cmd.add_argument("--report-out")
+    install_mcp_cmd.set_defaults(func=_handle_codex_install_mcp)
+
+    verify_mcp_cmd = codex_subparsers.add_parser(
+        "verify-mcp",
+        help="Verify Codex can launch Bourdon's recognition-first MCP server",
+    )
+    verify_mcp_cmd.add_argument(
+        "--prompt",
+        default="Can Codex join Bourdon federated memory?",
+        help="Prompt used to exercise prepare_recognition_context.",
+    )
+    verify_mcp_cmd.add_argument(
+        "--access-level",
+        choices=("public", "team", "private"),
+        default="team",
+    )
+    verify_mcp_cmd.add_argument(
+        "--library",
+        type=Path,
+        default=None,
+        help=f"Optional agent-library path for the MCP server (default: {DEFAULT_LIBRARY_PATH})",
+    )
+    verify_mcp_cmd.add_argument(
+        "--bourdon-command",
+        help="Bourdon executable path (default: sibling of the current Python executable)",
+    )
+    verify_mcp_cmd.add_argument("--report-out")
+    verify_mcp_cmd.set_defaults(func=_handle_codex_verify_mcp)
 
     sync_native_cmd = codex_subparsers.add_parser(
         "sync-native",

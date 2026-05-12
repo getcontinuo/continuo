@@ -18,6 +18,11 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--entity-name", default="Bourdon MCP")
     parser.add_argument("--query-topic", default="Bourdon MCP")
     parser.add_argument(
+        "--query-agent",
+        default="cursor",
+        help="Agent ID used to exercise query_agent_memory (default: cursor).",
+    )
+    parser.add_argument(
         "--recognition-prompt",
         default="",
         help="Prompt used to exercise prepare_recognition_context.",
@@ -89,7 +94,11 @@ async def _run(args: argparse.Namespace) -> int:
         )
         query_result = await session.call_tool(
             "query_agent_memory",
-            {"agent": "cursor", "topic": args.query_topic, "access_level": "team"},
+            {
+                "agent": args.query_agent,
+                "topic": args.query_topic,
+                "access_level": "team",
+            },
         )
         recent_result = await session.call_tool(
             "list_recent_work",
@@ -181,7 +190,8 @@ async def _run(args: argparse.Namespace) -> int:
             )
             if not report["checks"]["query_agent_memory_has_matches"]:
                 raise AssertionError(
-                    f"query_agent_memory returned no matches for {args.query_topic}."
+                    "query_agent_memory returned no matches for "
+                    f"{args.query_topic} under agent {args.query_agent}."
                 )
 
             report["checks"]["list_recent_work_has_sessions_field"] = (

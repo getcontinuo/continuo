@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import shutil
 import sqlite3
+import subprocess
 from pathlib import Path
 
 import yaml
@@ -359,6 +360,171 @@ def test_cli_deeper_context_returns_l2_text_with_fake_query(monkeypatch, capsys)
     assert exit_code == 0
     assert report["context"] == "Hydrated detail for Bourdon."
     assert report["context_chars"] == len("Hydrated detail for Bourdon.")
+
+
+def test_cli_codex_mcp_status_reports_missing(monkeypatch, capsys):
+    def fake_status(name: str = "bourdon") -> dict:
+        assert name == "bourdon"
+        return {
+            "name": "bourdon",
+            "installed": False,
+            "status": "missing",
+            "message": "No MCP server named 'bourdon' found.",
+        }
+
+    monkeypatch.setattr(cli_main, "_codex_mcp_status", fake_status, raising=False)
+
+    exit_code = main(["codex", "mcp-status"])
+    report = yaml.safe_load(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert report["installed"] is False
+    assert report["status"] == "missing"
+
+
+def test_cli_codex_mcp_status_reports_installed(monkeypatch, capsys):
+    def fake_status(name: str = "bourdon") -> dict:
+        assert name == "bourdon"
+        return {
+            "name": "bourdon",
+            "installed": True,
+            "status": "installed",
+            "command": "/Users/radman/bourdon/.venv/bin/bourdon",
+        }
+
+    monkeypatch.setattr(cli_main, "_codex_mcp_status", fake_status, raising=False)
+
+    exit_code = main(["codex", "mcp-status"])
+    report = yaml.safe_load(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert report["installed"] is True
+    assert report["status"] == "installed"
+
+
+def test_cli_codex_install_mcp_dry_run_prints_safe_command(monkeypatch, capsys):
+    monkeypatch.setattr(
+        cli_main,
+        "_codex_mcp_status",
+        lambda name="bourdon": {"name": name, "installed": False, "status": "missing"},
+        raising=False,
+    )
+
+    exit_code = main(["codex", "install-mcp"])
+    report = yaml.safe_load(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert report["mode"] == "dry-run"
+    assert report["would_write"] is True
+    assert report["command"][:8] == [
+        "codex",
+        "mcp",
+        "add",
+        "bourdon",
+        "--env",
+        "BOURDON_DEFAULT_ACCESS_LEVEL=team",
+        "--",
+        str(Path(cli_main.sys.executable).with_name("bourdon")),
+    ]
+    assert report["command"][-2:] == ["serve", "--quiet"]
+
+
+def test_cli_codex_install_mcp_write_runs_codex_add(monkeypatch, capsys):
+    captured: dict[str, list[str]] = {}
+
+    monkeypatch.setattr(
+        cli_main,
+        "_codex_mcp_status",
+        lambda name="bourdon": {"name": name, "installed": False, "status": "missing"},
+        raising=False,
+    )
+
+    def fake_run(command: list[str]) -> subprocess.CompletedProcess:
+        captured["command"] = command
+        return subprocess.CompletedProcess(command, 0, "Added global MCP server 'bourdon'.", "")
+
+    monkeypatch.setattr(cli_main, "_run_codex_mcp_add", fake_run, raising=False)
+
+    exit_code = main(["codex", "install-mcp", "--write"])
+    report = yaml.safe_load(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert report["mode"] == "write"
+    assert report["installed"] is True
+    assert captured["command"][:7] == [
+        "codex",
+        "mcp",
+        "add",
+        "bourdon",
+        "--env",
+        "BOURDON_DEFAULT_ACCESS_LEVEL=team",
+        "--",
+    ]
+
+
+def test_cli_codex_install_mcp_write_is_idempotent(monkeypatch, capsys):
+    def fail_run(command: list[str]) -> subprocess.CompletedProcess:
+        raise AssertionError(f"install should not run when already installed: {command}")
+
+    monkeypatch.setattr(
+        cli_main,
+        "_codex_mcp_status",
+        lambda name="bourdon": {
+            "name": name,
+            "installed": True,
+            "status": "installed",
+        },
+        raising=False,
+    )
+    monkeypatch.setattr(cli_main, "_run_codex_mcp_add", fail_run, raising=False)
+
+    exit_code = main(["codex", "install-mcp", "--write"])
+    report = yaml.safe_load(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert report["mode"] == "write"
+    assert report["installed"] is True
+    assert report["reason"] == "already_installed"
+
+
+def test_cli_codex_verify_mcp_reports_expected_tools(monkeypatch, capsys):
+    monkeypatch.setattr(
+        cli_main,
+        "_codex_mcp_status",
+        lambda name="bourdon": {"name": name, "installed": True, "status": "installed"},
+        raising=False,
+    )
+
+    async def fake_verify(command, args, env, prompt, access_level):
+        return {
+            "status": "ok",
+            "tools": sorted(cli_main.EXPECTED_BOURDON_MCP_TOOLS),
+            "missing_tools": [],
+            "recognition": {
+                "prompt": prompt,
+                "access_level": access_level,
+                "recognition": "Oh -- Bourdon, the project.",
+                "prompt_context": "Bourdon recognition context",
+            },
+        }
+
+    monkeypatch.setattr(cli_main, "_verify_bourdon_mcp_server", fake_verify, raising=False)
+
+    exit_code = main(
+        [
+            "codex",
+            "verify-mcp",
+            "--prompt",
+            "Can Codex join Bourdon federated memory?",
+        ]
+    )
+    report = yaml.safe_load(capsys.readouterr().out)
+
+    assert exit_code == 0
+    assert report["status"] == "ok"
+    assert report["missing_tools"] == []
+    assert "commit_to_federation" in report["tools"]
+    assert report["recognition"]["recognition"] == "Oh -- Bourdon, the project."
 
 
 def test_cli_codex_export_writes_manifest(tmp_path, monkeypatch):
