@@ -268,6 +268,7 @@ def test_health_degraded_missing_session_index(isolated_home):
     health = CodexAdapter().health_check()
     assert health.status == "degraded"
     assert "session_index" in health.reason
+    assert "state_db_records" not in health.reason
 
 
 def test_health_blocked_missing_codex_home(isolated_home):
@@ -908,6 +909,43 @@ def test_collect_session_records_keeps_newer_unindexed_rollouts(
     assert records[0]["thread_name"] == "Bourdon recognition first runtime layer"
     assert "Continuo" in records[0]["fallback_concepts"]
     assert "recognition first runtime layer" in records[0]["fallback_concepts"]
+
+
+def test_collect_session_records_keeps_unindexed_rollouts_without_known_concepts(
+    isolated_home,
+):
+    codex_home = isolated_home["create_codex_home"]()
+    _write_state_thread(
+        codex_home,
+        session_id="state-thread",
+        title="Known SQLite thread",
+        updated_at="2026-04-20T12:00:00Z",
+    )
+    isolated_home["add_rollout"](
+        codex_home,
+        (2026, 5, 13),
+        "plain-current-rollout",
+        "/workspace/plain",
+        "2026-05-13T13:09:40Z",
+        extra_records=[
+            {
+                "timestamp": "2026-05-13T13:10:00Z",
+                "type": "user_input",
+                "payload": {
+                    "text": "Please inspect the local logs before the next build."
+                },
+            }
+        ],
+    )
+
+    records = _collect_session_records(codex_home)
+
+    assert [record["id"] for record in records] == [
+        "plain-current-rollout",
+        "state-thread",
+    ]
+    assert records[0]["thread_name"] == "Codex session 2026-05-13"
+    assert records[0]["fallback_concepts"] == []
 
 
 def test_export_sessions_since_filter(isolated_home):

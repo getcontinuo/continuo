@@ -1336,11 +1336,8 @@ def _collect_session_index_records(
 
 def _session_record_sort_key(record: dict[str, Any]) -> tuple[str, float, str]:
     updated_at = str(record.get("updated_at") or "")
-    timestamp_value = 0.0
     try:
-        timestamp_value = float(updated_at)
-        if timestamp_value > 10_000_000_000:
-            timestamp_value = timestamp_value / 1000
+        parsed_number = float(updated_at)
     except ValueError:
         try:
             timestamp_value = datetime.fromisoformat(
@@ -1348,6 +1345,10 @@ def _session_record_sort_key(record: dict[str, Any]) -> tuple[str, float, str]:
             ).timestamp()
         except ValueError:
             timestamp_value = 0.0
+    else:
+        timestamp_value = parsed_number
+        if timestamp_value > 10_000_000_000:
+            timestamp_value = timestamp_value / 1000
     return (str(record.get("date") or ""), timestamp_value, updated_at)
 
 
@@ -1418,8 +1419,6 @@ def _collect_unindexed_rollout_records(
             continue
 
         concepts = _extract_rollout_fallback_concepts(rollout)
-        if not concepts:
-            continue
         thread_name = _thread_name_from_rollout_concepts(concepts, session_date)
         records.append(
             {
@@ -2077,7 +2076,7 @@ class CodexAdapter:
         missing = [
             name
             for name, ok in (
-                ("state_db_records", bool(state_records)),
+                ("state_db", state_db.is_file()),
                 ("session_index", session_index.is_file()),
                 ("sessions_dir", sessions_dir.is_dir()),
             )
