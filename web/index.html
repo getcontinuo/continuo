@@ -128,7 +128,9 @@ ai: replies.         ai: replies.</pre>
         made unprompted &mdash; is what makes this a real finding rather than a
         marketing anecdote. Until 2026-05-15, &ldquo;agent continuity around the
         work, not the vendor account&rdquo; was a stated thesis. As of 2026-05-15
-        it is a measured outcome with a reproducible substrate. Three honest gaps
+        it is a partially measured outcome &mdash; Bourdon&rsquo;s contribution is
+        real and Codex-attested, but its share alongside native local state is not
+        yet isolated. Three honest gaps
         the same transcript surfaced &mdash; latency under standard reasoning,
         whether recognition surfaces without an explicit prompt, source attribution
         that distinguishes Bourdon-supplied vs. native context &mdash; are tracked
@@ -195,9 +197,10 @@ ai: replies.         ai: replies.</pre>
         479 tests passing across orchestrator, adapters, federation server,
         recognition runtime, and the three runtime layers (Layer A backend-neutral
         inference protocol, Layer B interrupt-first symmetric primitive, Layer C
-        KV-cache-aware splice). Five shipping IDE adapters (Claude Code, Codex,
-        Cursor, GitHub Copilot, Cascade) plus native publishers for Clyde and
-        Clair, and a zero-code MCP integration with
+        KV-cache-aware splice). Five shipping IDE adapters &mdash; three live
+        (Claude Code, Codex, Cursor) and two convention-file fallback (GitHub
+        Copilot, Cascade, both requiring per-user init) &mdash; plus native
+        publishers for Clyde and Clair, and a zero-code MCP integration with
         <a href="https://github.com/getbourdon/bourdon/blob/main/docs/integrations/openmanus.md">OpenManus</a>.
         v0.4.x ships the Copilot and Cascade adapters (both convention-file
         fallback for cloud-only agents — both self-authored against the public
