@@ -260,6 +260,159 @@ def test_empty_library_renders_safe_placeholders(tmp_path):
     assert "- No federation sessions recovered yet." in text
 
 
+def test_federation_renderer_redacts_credential_shaped_summary(tmp_path):
+    """L5 manifests authored by other agents may contain credential-shaped
+    text in entity or session summaries. `_safe_native_memory_text`'s
+    redaction must apply uniformly through the federation render path.
+
+    Locks the redaction observed in the live smoke run into CI -- prior to
+    this test, the only evidence that the redaction filter still applied
+    after the federation render rewrite was the manual 22KB preview.
+    """
+    library = tmp_path / "agent-library"
+    _write_l5(
+        library,
+        "claude-code",
+        _stub_manifest(
+            "claude-code",
+            entities=[
+                {
+                    "name": "Acme deploy creds",
+                    "type": "concept",
+                    # Three different credential shapes from the sensitive-pattern set:
+                    # the literal word "password", an api_key style identifier, and
+                    # a Stripe sk_live_ token. All must redact.
+                    "summary": (
+                        "password=hunter2 api_key=AKIA1234567890 "
+                        "sk_live_abcdef0123456789xyz"
+                    ),
+                    "visibility": "team",
+                },
+            ],
+            sessions=[
+                {
+                    "date": "2026-05-18",
+                    "cwd": "/tmp",
+                    "project_focus": ["Acme deploy creds"],
+                    "key_actions": ["rotated bearer token after leak"],
+                    "visibility": "team",
+                }
+            ],
+        ),
+    )
+    text = _render_codex_federation_memory_text(
+        library_path=library,
+        access_level="team",
+    )
+    # Entity-summary redaction.
+    assert "[redacted credential-like text]" in text
+    assert "hunter2" not in text
+    assert "AKIA1234567890" not in text
+    assert "sk_live_abcdef0123456789xyz" not in text
+    # Session-action redaction (bearer token pattern).
+    assert "rotated bearer token after leak" not in text
+
+
+def test_from_library_with_memory_md_wraps_federation_output(
+    populated_library, tmp_path
+):
+    """`--from-library --memory-md` is the actual user-facing recognition
+    surface on Codex (bounded BOURDON section inside ~/.codex/memories/MEMORY.md
+    rather than the standalone bourdon_fallback.md). Verify the merge wraps
+    federation content between the BOURDON markers and preserves any
+    existing user-authored content in MEMORY.md.
+    """
+    from cli.main import _build_parser
+
+    codex_home = tmp_path / ".codex"
+    memories = codex_home / "memories"
+    memories.mkdir(parents=True)
+    memory_md = memories / "MEMORY.md"
+    # Pre-existing user-authored MEMORY.md content the merge must not destroy.
+    memory_md.write_text(
+        "# Codex Memory\n\nUser-authored note one.\nUser-authored note two.\n",
+        encoding="utf-8",
+    )
+
+    parser = _build_parser()
+    args = parser.parse_args(
+        [
+            "codex",
+            "sync-native",
+            "--write",
+            "--from-library",
+            "--memory-md",
+            "--library-path",
+            str(populated_library),
+            "--access-level",
+            "team",
+            "--codex-home",
+            str(codex_home),
+        ]
+    )
+    rc = args.func(args)
+    assert rc == 0
+
+    merged = memory_md.read_text(encoding="utf-8")
+    # Pre-existing content survives.
+    assert "User-authored note one." in merged
+    assert "User-authored note two." in merged
+    # Federation content lands between the canonical BOURDON markers.
+    assert "<!-- BEGIN BOURDON FALLBACK MEMORY -->" in merged
+    assert "<!-- END BOURDON FALLBACK MEMORY -->" in merged
+    begin_idx = merged.index("<!-- BEGIN BOURDON FALLBACK MEMORY -->")
+    end_idx = merged.index("<!-- END BOURDON FALLBACK MEMORY -->")
+    bourdon_block = merged[begin_idx:end_idx]
+    # Federation entities surface inside the bounded block specifically.
+    assert "Bourdon" in bourdon_block
+    assert "(via" in bourdon_block
+    # User content is outside the bourdon block, not inside it.
+    assert "User-authored note one." not in bourdon_block
+
+
+def test_from_library_with_memory_md_replaces_stale_bourdon_section(
+    populated_library, tmp_path
+):
+    """Re-running --from-library --memory-md must replace the prior BOURDON
+    block in-place rather than appending a second one."""
+    from cli.main import _build_parser
+
+    codex_home = tmp_path / ".codex"
+    memories = codex_home / "memories"
+    memories.mkdir(parents=True)
+    memory_md = memories / "MEMORY.md"
+    memory_md.write_text(
+        "# Codex Memory\n\n"
+        "<!-- BEGIN BOURDON FALLBACK MEMORY -->\n"
+        "stale content from a previous run\n"
+        "<!-- END BOURDON FALLBACK MEMORY -->\n",
+        encoding="utf-8",
+    )
+
+    parser = _build_parser()
+    args = parser.parse_args(
+        [
+            "codex",
+            "sync-native",
+            "--write",
+            "--from-library",
+            "--memory-md",
+            "--library-path",
+            str(populated_library),
+            "--codex-home",
+            str(codex_home),
+        ]
+    )
+    rc = args.func(args)
+    assert rc == 0
+
+    merged = memory_md.read_text(encoding="utf-8")
+    assert merged.count("<!-- BEGIN BOURDON FALLBACK MEMORY -->") == 1
+    assert merged.count("<!-- END BOURDON FALLBACK MEMORY -->") == 1
+    assert "stale content from a previous run" not in merged
+    assert "Bourdon" in merged
+
+
 def test_cli_handler_threads_flags(populated_library, tmp_path, monkeypatch, capsys):
     """End-to-end: argparse subparser routes the new flags into the payload."""
     from cli.main import _build_parser
